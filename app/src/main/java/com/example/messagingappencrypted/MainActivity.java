@@ -39,23 +39,23 @@ import co.chatsdk.ui.manager.UserInterfaceModule;
 import co.chatsdk.ui.profile.ProfileActivity;
 
 //implements View.OnClickListener
-public class MainActivity extends AppCompatActivity implements View.OnClickListener{
+public class MainActivity extends AppCompatActivity {
     public static final String EXTRA_MESSAGE = "com.example.encryptedmessageapp.MESSAGE";
     private FirebaseAuth auth;
-    private EditText passwordText;
+    //private EditText passwordText;
     private Context context;
-    private EditText emailText;
-    private static final String TAG = "EmailPassword";
+    //private EditText emailText;
+    /*private static final String TAG = "EmailPassword";*/
     //private Message message = StorageManager.shared().createEntity(Message.class);
     private User user; //StorageManager.shared().createEntity(User.class);
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        emailText = findViewById(R.id.email_text);
+        /*emailText = findViewById(R.id.email_text);
         passwordText = findViewById(R.id.password_text);
         findViewById(R.id.loginButton).setOnClickListener(this);
-        findViewById(R.id.register_button).setOnClickListener(this);
+        findViewById(R.id.register_button).setOnClickListener(this);*/
         auth = FirebaseAuth.getInstance();
         context = getApplicationContext();
         Configuration.Builder builder = new Configuration.Builder(context);
@@ -74,15 +74,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         FirebasePushModule.activate();
         user = StorageManager.shared().createEntity(User.class);
         //InterfaceManager.shared().a.startMainActivity(context);
+        
         InterfaceManager.shared().a.startLoginActivity(context, true);
     }
     @Override
     public void onStart(){
         super.onStart();
-        FirebaseUser currentUser = auth.getCurrentUser();
-        updateUI(currentUser);
+        /*FirebaseUser currentUser = auth.getCurrentUser();
+        updateUI(currentUser);*/
     }
-    @Override
+    /*@Override
     public void onClick(View v){
         int button = v.getId();
         if(button == R.id.loginButton){
@@ -102,12 +103,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         else if(button == R.id.messages_button){
             showMessages();
-        }
+        }*/
         /*else if(button == R.id.startChatButton){
             startChat();
         }*/
     }
-    private void createUserAccount(String email, String password){
+    /*private void createUserAccount(String email, String password){
         Log.d(TAG, "createAccount:"+ email);
         AccountDetails details = AccountDetails.signUp(email, password);
         ChatSDK.auth().authenticate(details).subscribe();
@@ -152,9 +153,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         });
-    }
+    }*/
 
-    private void signOut(){
+    /*private void signOut(){
         auth.signOut();
         ChatSDK.auth().logout().subscribe();
         updateUI(null);
@@ -203,7 +204,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //intent.putExtra();
         startActivity(intent);
         //InterfaceManager.shared().a.start;
-    }
+    }*/
    /* private void startChat(){
         Intent intent = new Intent(this, ChatActivity.class);
         startActivity(intent);

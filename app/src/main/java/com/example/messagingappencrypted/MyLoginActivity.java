@@ -22,6 +22,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.material.button.MaterialButton;
@@ -38,7 +39,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
     protected TextInputEditText usernameEdit;
     protected TextInputEditText passwordEdit;
 
-    protected MaterialButton buttonLogin, buttonRegister;//reset password?
+    protected Button buttonLogin, buttonRegister;//reset password?
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,7 +127,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             return;
         }
         auth = true;
-        showProgressDialog(getString(R.id.connecting));
+        showProgressDialog("Connecting...");
         Disposable d = ChatSDK.auth().authenticate(details).observeOn(AndroidSchedulers.mainThread()).doFinally(()->{auth = false;})
                 .subscribe(this::afterLogin, e -> { dismissProgressDialog(); toastErrorMessage(e, false); ChatSDK.logError(e);});
     }
@@ -166,21 +167,21 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             errorMessage = error.getMessage();
         }
         else if(login){
-            errorMessage = getString(R.id.login_activity_failed_to_login_toast);
+            errorMessage = "Failed to login!";
         }
         else {
-            errorMessage = getString(R.id.login_activity_failed_to_register_toast);
+            errorMessage = "Failed to register!";
         }
         showToast(errorMessage);
     }
 
     protected boolean checkFields(){
         if(usernameEdit.getText().toString().isEmpty()){
-            showToast(getString(R.id.login_activity_no_mail_toast));
+            showToast("Email field is empty!");
             return false;
         }
         if(passwordEdit.getText().toString().isEmpty()){
-            showToast(getString(R.id.login_activity_no_password_toast));
+            showToast("Password field is empty!");
             return false;
         }
         return true;

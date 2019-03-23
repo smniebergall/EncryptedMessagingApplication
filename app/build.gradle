@@ -49,5 +49,6 @@ dependencies {
     implementation 'co.chatsdk.chatsdk:chat-sdk-firebase-adapter:4.6.0'
     implementation 'co.chatsdk.chatsdk:chat-sdk-firebase-file-storage:4.6.0'
     implementation 'co.chatsdk.chatsdk:chat-sdk-firebase-push:4.6.0'
+    implementation 'com.google.android.material:material:1.0.0'
 }
 apply plugin: 'com.google.gms.google-services'
