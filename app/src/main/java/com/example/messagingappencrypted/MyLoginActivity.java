@@ -30,6 +30,9 @@ import com.google.android.material.textfield.TextInputEditText;
 
 import org.apache.commons.lang3.StringUtils;
 
+//change email edit to show fully what youre typing
+//authenticating seems to just keep doing it?
+
 public class MyLoginActivity extends BaseActivity implements View.OnClickListener {
     //AppCompatActivity
     protected boolean exitOnBack = false;
@@ -47,7 +50,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
         setContentView(R.layout.activity_my_login);
         setExitOnBackPressed(true);
         mainView = findViewById(R.id.chat_sdk_root_view);
-        setupTouchUIToDismissKeyboard(mainView);
+        //setupTouchUIToDismissKeyboard(mainView);
 
         initViews();
         if (getSupportActionBar() != null) {
@@ -92,10 +95,11 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             ChatSDK.logError(throwable);
             Toast.makeText(MyLoginActivity.this, throwable.getLocalizedMessage(), Toast.LENGTH_LONG).show();
         };
+        //Action doFinally = this::dismissProgressDialog;
         showProgressDialog(getString(R.string.authenticating));
         if (i == R.id.login_button) {
             passwordLogin();
-        } else if (i == R.id.register_button) {
+        } else if (i == R.id.button_register) {
             register();
         }
         //reset password
@@ -127,9 +131,18 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             return;
         }
         auth = true;
+        //never gets to connecting...
         showProgressDialog("Connecting...");
-        Disposable d = ChatSDK.auth().authenticate(details).observeOn(AndroidSchedulers.mainThread()).doFinally(()->{auth = false;})
-                .subscribe(this::afterLogin, e -> { dismissProgressDialog(); toastErrorMessage(e, false); ChatSDK.logError(e);});
+        Disposable d = ChatSDK.auth().authenticate(details).observeOn(AndroidSchedulers.mainThread())
+                .doFinally(() -> {
+                    auth = false;
+ //                   dismissProgressDialog();
+                })
+                .subscribe(this::afterLogin, e -> {
+                    dismissProgressDialog();
+                    toastErrorMessage(e, false);
+                    ChatSDK.logError(e);
+                });
     }
 
     @Override
@@ -143,10 +156,13 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             dismissProgressDialog();
             return;
         }
+        //dismissProgressDialog();
+        //definitely never gets here!!
         AccountDetails details = new AccountDetails();
         details.type = AccountDetails.Type.Register;
         details.username = usernameEdit.getText().toString();
         details.password = passwordEdit.getText().toString();
+        showToast("Yes I made it to register and almost authenticate!");
         authenticateWithDetails(details);
     }
 

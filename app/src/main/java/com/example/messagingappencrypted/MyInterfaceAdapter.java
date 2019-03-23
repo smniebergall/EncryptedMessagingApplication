@@ -27,3 +27,6 @@ public class MyInterfaceAdapter extends BaseInterfaceAdapter {
     //private threads tab
     //setPrivateThreadsFragment in Interface Adaptor
 }
+//private threads fragment extends ThreadsFragment
+//ThreadsFragment extends BaseFragment
+//
