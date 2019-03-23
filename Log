@@ -1,0 +1,27 @@
+02/02/19: Researched encryption and chatting, settled on signal protocol. 8am-12pm
+
+02/03/19: Settled on Chat SDK and Firebase for chatting on android. 11am-3pm
+
+02/06/19: Began integration of firebase into my project. 11am-3pm
+
+02/09/19: Finished integration of firebase and chat sdk. 8am-12pm
+
+02/16/19: Made activity for custom login through firebase. 8am-12pm
+
+02/23/19: Added basic chat sdk logins authentication and found I need to be in AndroidX to use chat sdk. 8am-12pm
+
+03/02/19:  8am-12pm
+
+03/03/19: 11am-2pm
+
+03/09/19: 8am-12pm
+
+03/13/19: Android studio updated and forced my project to fully migrate to androidx, many errors. 10am-3pm
+
+03/14/19: Recreated project to allow use of androidx without full migration. 11am-3pm
+
+03/16/19: Began using chat sdk activities instead of fully custom activities. 8am-12pm
+
+03/23/19: Added custom activity for login and extended base interface class, and began custom activity for priavte threads and fragments.
+Finally got git to actually push. 8am-1pm
+
