@@ -40,7 +40,9 @@ import co.chatsdk.ui.profile.ProfileActivity;
 
 //implements View.OnClickListener
 public class MainActivity extends AppCompatActivity {
-    public static final String EXTRA_MESSAGE = "com.example.encryptedmessageapp.MESSAGE";
+
+    //normally extends AppCompatActivity
+    //public static final String EXTRA_MESSAGE = "com.example.encryptedmessageapp.MESSAGE";
     private FirebaseAuth auth;
     //private EditText passwordText;
     private Context context;
@@ -53,8 +55,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         /*emailText = findViewById(R.id.email_text);
-        passwordText = findViewById(R.id.password_text);
-        findViewById(R.id.loginButton).setOnClickListener(this);
+        passwordText = findViewById(R.id.password_text);*/
+        /*findViewById(R.id.loginButton).setOnClickListener(this);
         findViewById(R.id.register_button).setOnClickListener(this);*/
         auth = FirebaseAuth.getInstance();
         context = getApplicationContext();
@@ -74,15 +76,15 @@ public class MainActivity extends AppCompatActivity {
         FirebasePushModule.activate();
         user = StorageManager.shared().createEntity(User.class);
         //InterfaceManager.shared().a.startMainActivity(context);
-        
+        ChatSDK.shared().setInterfaceAdapter(new MyInterfaceAdapter(context));
         InterfaceManager.shared().a.startLoginActivity(context, true);
     }
-    @Override
+    /*@Override
     public void onStart(){
         super.onStart();
-        /*FirebaseUser currentUser = auth.getCurrentUser();
-        updateUI(currentUser);*/
-    }
+        FirebaseUser currentUser = auth.getCurrentUser();
+        updateUI(currentUser);
+    }*/
     /*@Override
     public void onClick(View v){
         int button = v.getId();
@@ -209,7 +211,7 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(this, ChatActivity.class);
         startActivity(intent);
     }*/
-}
+//}
 //instead of start chat button, start activity for main screen with all conversations and seeing profile.
 //profile, edit profile, add contacts, chatting...
 
