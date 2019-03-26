@@ -14,6 +14,7 @@ public class MyInterfaceAdapter extends BaseInterfaceAdapter {
         //need to add cryptography portion to this class
     }
 
+//doesnt do cached login?
     //probably need private threads encrypted fragment that extends
     //ThreadsFragment
     //co.chatsdk.core.interfaces.ThreadType for private encrypted and

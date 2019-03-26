@@ -23,6 +23,7 @@ import co.chatsdk.core.dao.Keys;
 import co.chatsdk.core.dao.Message;
 import co.chatsdk.core.dao.User;
 import co.chatsdk.core.error.ChatSDKException;
+import co.chatsdk.core.interfaces.InterfaceAdapter;
 import co.chatsdk.core.session.ChatSDK;
 import co.chatsdk.core.session.Configuration;
 import co.chatsdk.core.session.InterfaceManager;
@@ -33,6 +34,7 @@ import co.chatsdk.firebase.FirebaseNetworkAdapter;
 import co.chatsdk.firebase.file_storage.FirebaseFileStorageModule;
 import co.chatsdk.firebase.push.FirebasePushModule;
 import co.chatsdk.ui.chat.ChatActivity;
+import co.chatsdk.ui.main.BaseActivity;
 import co.chatsdk.ui.manager.BaseInterfaceAdapter;
 import co.chatsdk.core.session.StorageManager;
 import co.chatsdk.ui.manager.UserInterfaceModule;
@@ -40,7 +42,7 @@ import co.chatsdk.ui.profile.ProfileActivity;
 
 //implements View.OnClickListener
 public class MainActivity extends AppCompatActivity {
-
+//AppCompatActivity
     //normally extends AppCompatActivity
     //public static final String EXTRA_MESSAGE = "com.example.encryptedmessageapp.MESSAGE";
     private FirebaseAuth auth;
@@ -76,15 +78,18 @@ public class MainActivity extends AppCompatActivity {
         FirebasePushModule.activate();
         user = StorageManager.shared().createEntity(User.class);
         //InterfaceManager.shared().a.startMainActivity(context);
+
         ChatSDK.shared().setInterfaceAdapter(new MyInterfaceAdapter(context));
-        InterfaceManager.shared().a.startLoginActivity(context, true);
+        //InterfaceManager.shared().a.startLoginActivity(context, true);
+        InterfaceManager.shared().a.startMainActivity(context);
     }
-    /*@Override
+    @Override
     public void onStart(){
         super.onStart();
-        FirebaseUser currentUser = auth.getCurrentUser();
-        updateUI(currentUser);
-    }*/
+        //InterfaceManager.shared().a.startLoginActivity(context);
+        //FirebaseUser currentUser = auth.getCurrentUser();
+        //updateUI(currentUser);
+    }
     /*@Override
     public void onClick(View v){
         int button = v.getId();

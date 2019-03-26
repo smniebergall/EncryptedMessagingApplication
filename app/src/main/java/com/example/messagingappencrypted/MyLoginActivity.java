@@ -143,6 +143,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
                     toastErrorMessage(e, false);
                     ChatSDK.logError(e);
                 });
+        //ChatSDK.auth().authenticateWithCachedToken().subscribe();
     }
 
     @Override
