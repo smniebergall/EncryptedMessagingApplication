@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.NotificationCompat;
 import co.chatsdk.core.session.ChatSDK;
+import co.chatsdk.core.session.NetworkManager;
 import co.chatsdk.core.types.AccountDetails;
 import co.chatsdk.core.utils.StringChecker;
 import co.chatsdk.ui.chat.options.BaseChatOption;
@@ -18,6 +19,7 @@ import android.app.Notification;
 import android.content.Context;
 import android.content.Intent;
 import android.drm.DrmStore;
+import android.graphics.Point;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -25,10 +27,20 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.firebase.client.Config;
+import com.firebase.client.Firebase;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import org.apache.commons.lang3.StringUtils;
+
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.*;
+import java.util.ArrayList;
+import java.util.List;
 
 //change email edit to show fully what youre typing
 //authenticating seems to just keep doing it?
@@ -38,7 +50,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
     protected boolean exitOnBack = false;
     protected ConstraintLayout mainView;
     protected boolean auth = false;
-
+    protected DatabaseReference database;
     protected TextInputEditText usernameEdit;
     protected TextInputEditText passwordEdit;
 
@@ -51,7 +63,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
         setExitOnBackPressed(true);
         mainView = findViewById(R.id.chat_sdk_root_view);
         //setupTouchUIToDismissKeyboard(mainView);
-
+        database = FirebaseDatabase.getInstance().getReference();
         initViews();
         if (getSupportActionBar() != null) {
             getSupportActionBar().hide();
@@ -73,13 +85,13 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
         }
     }
 
-    /*@Override
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data){
         super.onActivityResult(requestCode, resultCode, data);
         if(ChatSDK.socialLogin() != null){
-            ChatSDK.socialLogin().onActivityResult();
-        }
-    }*/
+            //ChatSDK.socialLogin().onActivityResult();
+        }//what is this?
+    }
 
     protected void initListeners() {
         buttonLogin.setOnClickListener(this);
@@ -111,6 +123,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
     }
 
     protected void afterLogin () {
+        //ChatSDK.ui().startMainActivity(getApplicationContext());
         finish();
     }
 
@@ -143,7 +156,9 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
                     toastErrorMessage(e, false);
                     ChatSDK.logError(e);
                 });
-        //ChatSDK.auth().authenticateWithCachedToken().subscribe();
+        //need to do creation of keys when register. Maybe right after
+        //authenticating here? Maybe add boolean for if register or login
+        //or just do it at
     }
 
     @Override
@@ -157,14 +172,58 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             dismissProgressDialog();
             return;
         }
-        //dismissProgressDialog();
-        //definitely never gets here!!
         AccountDetails details = new AccountDetails();
         details.type = AccountDetails.Type.Register;
         details.username = usernameEdit.getText().toString();
         details.password = passwordEdit.getText().toString();
-        showToast("Yes I made it to register and almost authenticate!");
         authenticateWithDetails(details);
+        //maybe do it here which means custom authenicate
+        //ChatSDKAbstractLoginActivity.java
+        //generateKeys(): need long-term identity keys, medium-term
+        // signed prekey, and several ephermeral prekey pairs
+        //on this side and stored locally.
+        //Then bundle all into a key bundle to register in key distribution
+        //center. Android keystore system
+        //identity key is public/private key pair,
+        //KeyPairGenerator()
+        try {
+            //KeyPairGenerator generator = KeyPairGenerator.getInstance("DiffieHellman");
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
+            generator.initialize(256);
+            KeyPair pair = generator.generateKeyPair();
+            Key priv = pair.getPrivate();
+            Key pub = pair.getPublic();
+            List<KeyPair> realPrekeys = new ArrayList<KeyPair>();
+            for(int i = 0; i < 10; i++){
+                realPrekeys.add(generator.generateKeyPair());
+            }
+            List<Key> prekeys = new ArrayList<Key>();
+            for(int i = 0; i < realPrekeys.size();i++){
+                prekeys.add(realPrekeys.get(i).getPublic());
+            }
+            KeyPair actualPrekey = generator.generateKeyPair();
+            Key prekey = actualPrekey.getPublic();
+            String ID = ChatSDK.currentUserID();
+            KeyBundle bundle = new KeyBundle(priv, prekey, prekeys);
+            ActualKeyBundle realBundle = new ActualKeyBundle(ID, pair, actualPrekey, realPrekeys);
+            database.child("users").child(ID).setValue(bundle);
+            //evey once in a while, upload new signed prekey and prekey signature
+            //save private of actual key bundle to phone somehow
+            //get public
+
+        }catch(NoSuchAlgorithmException e){
+            //handle exception
+        }
+        //byte[] publicKey = pair.getPublic().getEncoded();
+        //B is Base Point, I identoty point, p field prime, q order of base
+        //point, c cofactor, d edwards curve constant, A mongomnery
+        //curve constant, n nonsquare integer modulo integer, |p| ceil(log2(p)),
+        //|q| ceil(log2(q)), b 8*(ceil((|p| +1)/8)
+        //on_curve(Point P) returns if P satisfies equation
+        //mongomery curve equation for points(u,v)= v^2 = u(u^2 +Au +1)(mod p)
+        //elligator2(int r){ u1 = -A * inversion(1 +nr^2)(mod p);
+        //w1 = u1(u1^2 +Au1 +1) (mod p); if w1^(p-1)/2 == -1 {
+        //u2 = -A -u1 (mod p); return u2;} return u1;}
     }
 
     @Override
@@ -212,5 +271,20 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
 
      protected void setExitOnBackPressed(boolean exitOnBack){
         this.exitOnBack = exitOnBack;
+     }
+
+     /*protected Point convertMont(int u){
+        Point p;
+        //u_masked = u(mod 2^|p|)
+         //P.y = u_to_y(u_masked)
+         //P.s = 0
+         //return P
+        return p;
+     }*/
+     protected int elligator2(int r){
+         //u1 = -A * inversion(1 +nr^2)(mod p);
+         //w1 = u1(u1^2 +Au1 +1) (mod p); if w1^(p-1)/2 == -1 {
+         //u2 = -A -u1 (mod p); return u2;} return u1;}
+        return r;
      }
 }
