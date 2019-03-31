@@ -82,12 +82,13 @@ public class MainActivity extends AppCompatActivity {
 
         ChatSDK.shared().setInterfaceAdapter(new MyInterfaceAdapter(context));
 
-        ChatSDK.ui().startLoginActivity(context, false);
+
+        ChatSDK.ui().startLoginActivity(context, true);
         ChatSDK.ui().startMainActivity(context);
         //InterfaceManager.shared().a.startMainActivity(context);
 
     }
-    /*@Override
+    @Override
     public void onStart(){
         super.onStart();
         //ChatSDK.ui().startLoginActivity(context, true);
@@ -96,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
         //InterfaceManager.shared().a.startLoginActivity(context);
         //FirebaseUser currentUser = auth.getCurrentUser();
         //updateUI(currentUser);
-    }*/
+    }
 
 
 }

@@ -156,9 +156,6 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
                     toastErrorMessage(e, false);
                     ChatSDK.logError(e);
                 });
-        //need to do creation of keys when register. Maybe right after
-        //authenticating here? Maybe add boolean for if register or login
-        //or just do it at
     }
 
     @Override
@@ -186,9 +183,9 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
         //center. Android keystore system
         //identity key is public/private key pair,
         //KeyPairGenerator()
-        try {
+        //try {
             //KeyPairGenerator generator = KeyPairGenerator.getInstance("DiffieHellman");
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
+            /*KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
             generator.initialize(256);
             KeyPair pair = generator.generateKeyPair();
             Key priv = pair.getPrivate();
@@ -206,14 +203,14 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             String ID = ChatSDK.currentUserID();
             KeyBundle bundle = new KeyBundle(priv, prekey, prekeys);
             ActualKeyBundle realBundle = new ActualKeyBundle(ID, pair, actualPrekey, realPrekeys);
-            database.child("users").child(ID).setValue(bundle);
+            database.child("users").child(ID).setValue(bundle);*/
             //evey once in a while, upload new signed prekey and prekey signature
             //save private of actual key bundle to phone somehow
             //get public
 
-        }catch(NoSuchAlgorithmException e){
+        //}catch(NoSuchAlgorithmException e){
             //handle exception
-        }
+        //}
         //byte[] publicKey = pair.getPublic().getEncoded();
         //B is Base Point, I identoty point, p field prime, q order of base
         //point, c cofactor, d edwards curve constant, A mongomnery
