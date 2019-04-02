@@ -91,6 +91,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onStart(){
         super.onStart();
+        ChatSDK.ui().startLoginActivity(context, true);
+        ChatSDK.ui().startMainActivity(context);
         //ChatSDK.ui().startLoginActivity(context, true);
         //InterfaceManager.shared().a.startLoginActivity(context, true);
         //InterfaceManager.shared().a.startMainActivity(context);

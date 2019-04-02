@@ -278,10 +278,10 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
          //return P
         return p;
      }*/
-     protected int elligator2(int r){
+     /*protected int elligator2(int r){
          //u1 = -A * inversion(1 +nr^2)(mod p);
          //w1 = u1(u1^2 +Au1 +1) (mod p); if w1^(p-1)/2 == -1 {
          //u2 = -A -u1 (mod p); return u2;} return u1;}
         return r;
-     }
+     }*/
 }

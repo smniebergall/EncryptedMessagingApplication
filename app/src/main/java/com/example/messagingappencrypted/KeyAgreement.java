@@ -1,5 +1,7 @@
 package com.example.messagingappencrypted;
 
+import java.security.Key;
+
 public class KeyAgreement {
     //X3DH and elliptical curve diffie-hellman
     //SHA-256 or SHA-512 for hash
@@ -39,4 +41,41 @@ public class KeyAgreement {
     //from some cryptographic PRF keyed by SK
 
     //A can continue using SK or keys derived from SK to communicate
+
+    public KeyBundle getUsersKeyBundle(String otherUserID, String currentUserID){
+        KeyBundle bundle = new KeyBundle();
+        //get bundle form key distribution center
+        return bundle;
+    }
+
+    public Key computeMasterKey(){
+         Key k = null;
+         //compute master key with X3DH
+         return k;
+    }
+
+    public void sendMessage(){
+
+    }
+
+    public Key KDF(Key root, Key chainKey){
+        Key k = null;
+        //two symmetric keys
+        //may need these to be global? for each user?
+        //attaches this key to message to send
+        //info is in user and public
+        return k;
+    }
+
+    public void AES(){
+
+    }
+
+    public String HMAC(){
+        String s = "";
+        //HMAC-SHA256
+        //output hash is 256 bits in length
+        return s;
+    }
+
 }
