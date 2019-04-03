@@ -6,6 +6,10 @@ import java.security.Key;
 import java.security.KeyPair;
 
 public class KeyAgreement {
+
+    public KeyAgreement(){
+
+    }
     //X3DH and elliptical curve diffie-hellman
     //SHA-256 or SHA-512 for hash
     //curve is X25519 or X448
@@ -52,10 +56,11 @@ public class KeyAgreement {
         return bundle;
     }
 
-    public Key computeMasterKey(){
-         Key k = null;
+    public byte[] computeMasterKey(){
+         byte[] b = new byte[256];
+         //bytes or keys?????
          //compute master key with X3DH
-         return k;
+         return b;
     }
 
     public void sendMessage(){
@@ -122,9 +127,6 @@ public class KeyAgreement {
         //for a one-time prekey
     }
 
-    public void startSession(){
-
-    }
 //required ofr double ratchet
     public void X3DH(){
         //handles
@@ -132,42 +134,61 @@ public class KeyAgreement {
 
     public KeyPair generate_DH(){
         KeyPair k = null;
+        //returns new DH key pair
         return k;
     }
 
-     public void DH(KeyPair pair, Key pub){
-        //
+     public KeyPair DH(KeyPair pair, Key pub){
+        //DH calculation using pair private key and pub
+         //if invalid public keys, exception
+         /*byte[] b = new byte[256];
+         return b;*/
+         KeyPair k = null;
+         return k;
      }
 
-     public Pair KDF_RK(Key root, Key output){
+     public Pair KDF_RK(Key root, KeyPair output){
         Pair k = null;
+        //regular pair or kaypair??
         //(32 root key, 32 chain key);
+         //output of applying KDF keyed by a 32 byte root key to a DH output
         return k;
      }
 
      public Pair KDF_CK(Key chain){
         Pair k = null;
         //(32-byte chain key, 32-byte message key);
+         //applying KDF keyed by a 32 byte chian key to come constant
         return k;
      }
 
      public String encrypt(Key messageKey, String plainText, String data){
         String s = "";
+        //AEAD encryption of plaintext w/ message key. Data is authenticated
+         //because each message key used once,
+         //AEAD nonce may be handled  by a fixed constant, or derived from message key
+         //alongside independent AEAD encryption key
         return s;
      }
 
      public String decrypt(Key messageKey, String cipherText, String data){
         String s = "";
+        //returns AEAD decryption os ciphertext with message key
+         //authentication fails, exception
         return s;
      }
 
      public String header(KeyPair dhPair, int chainLength, int messageNumber){
         String s = "";
+        //create new message header containing DH ratchet public key from the key pair
+         //Header Object?
         return s;
      }
 
      public String concat(byte[] seq, String header){
         String s = "";
+        //encodes message header into parsable byte seq, prepends ad and returns
+         //result.
         return s;
      }
     //to retrieve info from firebase...
