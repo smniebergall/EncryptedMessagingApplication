@@ -1,6 +1,9 @@
 package com.example.messagingappencrypted;
 
+import android.util.Pair;
+
 import java.security.Key;
+import java.security.KeyPair;
 
 public class KeyAgreement {
     //X3DH and elliptical curve diffie-hellman
@@ -45,6 +48,7 @@ public class KeyAgreement {
     public KeyBundle getUsersKeyBundle(String otherUserID, String currentUserID){
         KeyBundle bundle = new KeyBundle();
         //get bundle form key distribution center
+
         return bundle;
     }
 
@@ -55,20 +59,55 @@ public class KeyAgreement {
     }
 
     public void sendMessage(){
-
+        //DOuble ratchet to recieve and send encrypted messages
     }
 
-    public Key KDF(Key root, Key chainKey){
+    public Key KDF(Key secret){
         Key k = null;
         //two symmetric keys
         //may need these to be global? for each user?
         //attaches this key to message to send
         //info is in user and public
+        //HMAC and HKDF together create KDF
+        //ALice and bob both store KDF key of root, sending, and reciecing
+        //a's sending matches b's recieving
+        //as a and b exchange messages, they also exchange new dh public keys
+        //and dh output secrets become the inputs to the root chain
+        //output keys of root chain become new KDF keys for sending and
+        //receiving chains
+        //sending and receiving chains advance as each message is sent and received
+        //their output is used to encrypt and decrypt messages(symmetric key ratchet)
+
         return k;
     }
 
-    public void AES(){
+    public void symmetricKeyRatchet(){
+        //every message sent or received is encrypted with a unique message key
+        //message keys are output keys from sending and recieving KDF chains
+        //these are called chian keys
+        //inputs for sending and recieving chains are constant
+        //used for unique key that can encrypt with and be deleted
+        //when new ratchet public key is recieved from remote party,
+        //current ratchet key pair ir replaced with new key pair
+        //dh outputs put into KDF to create root chain, and the outputs of KDf
+        //used as sending and recieving chian keys
+    }
 
+    public void DHRatchet(){
+        //updates chain keys based on DH outputs
+        //each party generates a DH key pair, which becomes current ratchet key pair
+        //each message from either party starts with current ratchet public key
+        //
+    }
+
+    public void doubleRatchet(){
+        //when message is recieved or sent, symmetric-key ratchet step is applied to
+        //sending or recieving chain to derive message key
+        //when new ratchet public key received, dh ratchet step performed prior
+        //to symmetric-key rathcte to replace chain keys
+    }
+    public void AES(String message){
+        //
     }
 
     public String HMAC(){
@@ -77,5 +116,72 @@ public class KeyAgreement {
         //output hash is 256 bits in length
         return s;
     }
+
+    public void sendMessage(String s){
+        //check if key bundle has "count" of 3 for no prekey and 4
+        //for a one-time prekey
+    }
+
+    public void startSession(){
+
+    }
+//required ofr double ratchet
+    public void X3DH(){
+        //handles
+    }
+
+    public KeyPair generate_DH(){
+        KeyPair k = null;
+        return k;
+    }
+
+     public void DH(KeyPair pair, Key pub){
+        //
+     }
+
+     public Pair KDF_RK(Key root, Key output){
+        Pair k = null;
+        //(32 root key, 32 chain key);
+        return k;
+     }
+
+     public Pair KDF_CK(Key chain){
+        Pair k = null;
+        //(32-byte chain key, 32-byte message key);
+        return k;
+     }
+
+     public String encrypt(Key messageKey, String plainText, String data){
+        String s = "";
+        return s;
+     }
+
+     public String decrypt(Key messageKey, String cipherText, String data){
+        String s = "";
+        return s;
+     }
+
+     public String header(KeyPair dhPair, int chainLength, int messageNumber){
+        String s = "";
+        return s;
+     }
+
+     public String concat(byte[] seq, String header){
+        String s = "";
+        return s;
+     }
+    //to retrieve info from firebase...
+    //private DatabadReference database;
+    //database = FirebaseDatabase.getInstance().getReference();
+    //can update database.child("users").child(userId).child("username").setValue(name);
+    //ValueEventListener postListener = new ValueEventListener(){
+    //@Override
+    //public void onDataChange(DataSnapshot dataSnapshot){
+    //Class class = dataSnapshot.getValue(Class.class);}
+    //@override
+    //public void onCancelled(DatabaseError databaseError){
+    //Log.w(TAG, "loadPost:onCancelled", databaseError.toException());}
+    //TO retrieve data, use Query q =...
+    //
 
 }
