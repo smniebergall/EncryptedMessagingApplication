@@ -4,6 +4,7 @@ import android.util.Pair;
 
 import java.security.Key;
 import java.security.KeyPair;
+import java.security.Signature;
 
 public class KeyAgreement {
 
@@ -149,16 +150,47 @@ public class KeyAgreement {
 
      public Pair KDF_RK(Key root, KeyPair output){
         Pair k = null;
-        //regular pair or kaypair??
+        byte[] rootK = root.getEncoded();
+        byte[] outputMaterial;
+        //KeyPair cannot do getEncoded because it two keys so probbaly needs to be
+         //byte[] in function itself
+         //so output of diffie hellman is byte[] too??
+
+        //regular pair not keypair because pair can do two arrays of bytes
         //(32 root key, 32 chain key);
+         //and SHA-256
          //output of applying KDF keyed by a 32 byte root key to a DH output
+         //HKDF withh root as salt, output as input key material, and application specific
+         //byte sequence as HKDF info. Info should be distinct from others uses of HKDF
+
+         //step 1: extract: PsuedoRandomKey = HMAC-Hash(salt, inputKeyMaterial)
+         //step 2: Expand: OuptuKeyMaterial = {N = ceiling(lengthOfOutputInOctets
+         //divided by HashLen; T = first L octets of T which are T(0) is empty string
+         //and t(1) is HMAC-Hash(PRK, T90) |info | 0x01) and T9@0 is HMAC-Hash(PRK,
+         //T(1) | info | 0x02) and so on up to N
+         //| means concatenated
+         //key.getEncoded() gives byte[] and
+         //looks everything is in bte[] instead of keys
         return k;
      }
-
+//java has Signature object with getInstance
+    //initSign(PrivateKey private) puts it in sign state
+    //initVerify(PubicKey public) puts it in verify state
+    //update(byte[] data) or update(byte[] data, int off, int len) to supply to object
+    //then sign() and returns byte[]
+    //update and verify if in verify state
+    //GCMParameterSpec myParams = new GCMParameterSpec(int myTLen, byte[] myIv);
+    //Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
+    //c.init(Cipher.ENCRYPT_MODE, secretKey, myParams);
+    //
      public Pair KDF_CK(Key chain){
         Pair k = null;
+        //can wrap and unwrap keys when sending them
         //(32-byte chain key, 32-byte message key);
          //applying KDF keyed by a 32 byte chian key to come constant
+         //HMAC, chain key as HMAC key and using separate constants as input
+         //like 0x01 as input to produce message key,a nd 0x02 to produce
+         //next chain key
         return k;
      }
 

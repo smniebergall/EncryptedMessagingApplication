@@ -87,3 +87,6 @@ public class User {
         Pair<Key, Key> p = k.KDF_CK(this.chainKey);
     }*/
 }
+//double ratchet used to exchange encrypted messages on a shared secret key
+//X3DH makes the secret key to exchange messages
+//signature schemes
