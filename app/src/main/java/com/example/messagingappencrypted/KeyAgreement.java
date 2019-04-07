@@ -5,6 +5,10 @@ import android.util.Pair;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.Signature;
+import java.security.*;
+
+import javax.crypto.Cipher;
+import javax.crypto.Mac;
 
 public class KeyAgreement {
 
@@ -116,13 +120,6 @@ public class KeyAgreement {
         //
     }
 
-    public String HMAC(){
-        String s = "";
-        //HMAC-SHA256
-        //output hash is 256 bits in length
-        return s;
-    }
-
     public void sendMessage(String s){
         //check if key bundle has "count" of 3 for no prekey and 4
         //for a one-time prekey
@@ -136,6 +133,7 @@ public class KeyAgreement {
     public KeyPair generate_DH(){
         KeyPair k = null;
         //returns new DH key pair
+        //generate key pairs based on Curve25519 or Curve448 curves
         return k;
     }
 
@@ -144,6 +142,7 @@ public class KeyAgreement {
          //if invalid public keys, exception
          /*byte[] b = new byte[256];
          return b;*/
+         //return output from X25519 or X448, dont need to check for invalid public keys
          KeyPair k = null;
          return k;
      }
@@ -152,6 +151,8 @@ public class KeyAgreement {
         Pair k = null;
         byte[] rootK = root.getEncoded();
         byte[] outputMaterial;
+
+
         //KeyPair cannot do getEncoded because it two keys so probbaly needs to be
          //byte[] in function itself
          //so output of diffie hellman is byte[] too??
@@ -182,9 +183,15 @@ public class KeyAgreement {
     //GCMParameterSpec myParams = new GCMParameterSpec(int myTLen, byte[] myIv);
     //Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
     //c.init(Cipher.ENCRYPT_MODE, secretKey, myParams);
-    //
+    //MAC class (HMACSha256)
+    //MessageDIgest sha = MessageDIgest.getInstance("SHA-256");
      public Pair KDF_CK(Key chain){
         Pair k = null;
+        //need to turn string chain key into speicific kind of key like SecretKeySpec
+         //new SecretKeySPec(key.getBytes("UTF-8"), "AES") for example
+         //so elliptic version?
+         //Mac HMAC_SHA256 = Mac.getInstance("HmacSHA256");
+         //HMAC_SHA256.init(Cipher.ENCRYPT_MODE, chain);
         //can wrap and unwrap keys when sending them
         //(32-byte chain key, 32-byte message key);
          //applying KDF keyed by a 32 byte chian key to come constant
@@ -200,6 +207,9 @@ public class KeyAgreement {
          //because each message key used once,
          //AEAD nonce may be handled  by a fixed constant, or derived from message key
          //alongside independent AEAD encryption key
+         //AEAD encryption based on SIV or combination of CBC with HMAC
+         //AES-256 in CBC mode and PKCS#7 padding
+         //Cipher c = Cipher.getInstance("AES/CBC/PKCS5Padding");
         return s;
      }
 
