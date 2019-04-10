@@ -18,7 +18,12 @@ public class User {
     int messageNumberSent;
     int numberOfMessagesInChain;
     KeyAgreement k;
-    Dictionary<Key, String> skippedMessages;
+    Dictionary<Key, String> skippedMessages;//indexed by header key and message number
+    //instead of this
+    Key headerSending;
+    Key headerReceiving;
+    Key nextHeaderSending;
+    Key nextHeaderReceiving;
 
     public User(String userID){
         this.userID = userID;
@@ -32,7 +37,7 @@ public class User {
         this.rootKey = root;
         this.chainKey = chain;
     }
-
+    //Only if from alice to send message to bob, and doesn't know
     public void updateUserForRatchet(Key secret, Key pub){
         k = new KeyAgreement();
         this.sendingKey = k.generate_DH();

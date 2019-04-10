@@ -23,6 +23,7 @@ import android.graphics.Point;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -38,9 +39,15 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyAgreement;
+import javax.crypto.Mac;
 
 //change email edit to show fully what youre typing
 //authenticating seems to just keep doing it?
@@ -183,10 +190,9 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
         //center. Android keystore system
         //identity key is public/private key pair,
         //KeyPairGenerator()
-        //try {
-            //KeyPairGenerator generator = KeyPairGenerator.getInstance("DiffieHellman");
-            /*KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
-            generator.initialize(256);
+        try {
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("X25519");
+            generator.initialize(256);//what size??
             KeyPair pair = generator.generateKeyPair();
             Key priv = pair.getPrivate();
             Key pub = pair.getPublic();
@@ -203,14 +209,14 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             String ID = ChatSDK.currentUserID();
             KeyBundle bundle = new KeyBundle(priv, prekey, prekeys);
             ActualKeyBundle realBundle = new ActualKeyBundle(ID, pair, actualPrekey, realPrekeys);
-            database.child("users").child(ID).setValue(bundle);*/
+            database.child("users").child(ID).setValue(bundle);
             //evey once in a while, upload new signed prekey and prekey signature
             //save private of actual key bundle to phone somehow
             //get public
 
-        //}catch(NoSuchAlgorithmException e){
+        }catch(NoSuchAlgorithmException e){
             //handle exception
-        //}
+        }
         //byte[] publicKey = pair.getPublic().getEncoded();
         //B is Base Point, I identoty point, p field prime, q order of base
         //point, c cofactor, d edwards curve constant, A mongomnery
@@ -278,10 +284,5 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
          //return P
         return p;
      }*/
-     /*protected int elligator2(int r){
-         //u1 = -A * inversion(1 +nr^2)(mod p);
-         //w1 = u1(u1^2 +Au1 +1) (mod p); if w1^(p-1)/2 == -1 {
-         //u2 = -A -u1 (mod p); return u2;} return u1;}
-        return r;
-     }*/
+
 }
