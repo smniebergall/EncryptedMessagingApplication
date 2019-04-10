@@ -4,52 +4,54 @@ import android.util.Pair;
 
 import java.security.Key;
 import java.security.KeyPair;
+import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 public class User {
     String userID;
     ActualKeyBundle actualBundle;
-    Key rootKey;
-    Key chainKey;
-    Key receivingKey;
-    KeyPair sendingKey;
-    int messageNumberReceived;
-    int messageNumberSent;
-    int numberOfMessagesInChain;
     KeyAgreement k;
-    Dictionary<Key, String> skippedMessages;//indexed by header key and message number
-    //instead of this
-    Key headerSending;
-    Key headerReceiving;
-    Key nextHeaderSending;
-    Key nextHeaderReceiving;
-
+    List<State> states;
     public User(String userID){
         this.userID = userID;
+        states = null;
     }
 
+    public void addState(State state){
+        states.add(state);
+    }
+
+    public void deleteState(State state){
+        states.remove(state);
+    }
     public void updateKeyBundle(ActualKeyBundle bundle){
         this.actualBundle = bundle;
     }
 
-    public void updateRootAndChainKeys(Key root, Key chain){
-        this.rootKey = root;
-        this.chainKey = chain;
+    public void updateRootAndChainKeys(State state, Key root, Key chain){
+        state.rootKey = root;
+        state.chainKeyReceiving = chain;//right chain key??
     }
     //Only if from alice to send message to bob, and doesn't know
-    public void updateUserForRatchet(Key secret, Key pub){
+    public void updateUserForRatchet(State state, Key secret, Key pub){
         k = new KeyAgreement();
-        this.sendingKey = k.generate_DH();
-        this.receivingKey = pub;
-        KeyPair result = k.DH(this.sendingKey, this.receivingKey);
+        state.sendingKey = k.generate_DH();
+        state.receivingKey = pub;
+        KeyPair result = k.DH(state.sendingKey, state.receivingKey);
         Pair<Key, Key> res = k.KDF_RK(secret, result);
-        this.rootKey = res.first;
-        this.chainKey = res.second;
-        this.messageNumberReceived = 0;
-        this.messageNumberSent = 0;
-        this.numberOfMessagesInChain = 0;
-        this.skippedMessages = new Dictionary<Key, String>() {
+        state.rootKey = res.first;
+        state.chainKeySending = res.second;
+        state.messageNumberReceived = 0;
+        state.messageNumberSent = 0;
+        state.numberOfMessagesInChain = 0;
+        state.skippedMessages = new Map<Key, Integer>() {
             @Override
             public int size() {
                 return 0;
@@ -61,27 +63,58 @@ public class User {
             }
 
             @Override
-            public Enumeration<Key> keys() {
+            public boolean containsKey(@Nullable Object key) {
+                return false;
+            }
+
+            @Override
+            public boolean containsValue(@Nullable Object value) {
+                return false;
+            }
+
+            @Nullable
+            @Override
+            public Integer get(@Nullable Object key) {
+                return null;
+            }
+
+            @Nullable
+            @Override
+            public Integer put(@NonNull Key key, @NonNull Integer value) {
+                return null;
+            }
+
+            @Nullable
+            @Override
+            public Integer remove(@Nullable Object key) {
                 return null;
             }
 
             @Override
-            public Enumeration<String> elements() {
-                return null;
+            public void putAll(@NonNull Map<? extends Key, ? extends Integer> m) {
+
             }
 
             @Override
-            public String get(Object key) {
+            public void clear() {
+
+            }
+
+            @NonNull
+            @Override
+            public Set<Key> keySet() {
                 return null;
             }
 
+            @NonNull
             @Override
-            public String put(Key key, String value) {
+            public Collection<Integer> values() {
                 return null;
             }
 
+            @NonNull
             @Override
-            public String remove(Object key) {
+            public Set<Entry<Key, Integer>> entrySet() {
                 return null;
             }
         };

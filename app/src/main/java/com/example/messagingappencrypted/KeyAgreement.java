@@ -7,12 +7,15 @@ import java.security.Key;
 import java.security.KeyPair;
 import java.security.Signature;
 import java.security.*;
+import java.util.Enumeration;
 
 import javax.crypto.Cipher;
 import javax.crypto.*;
 
-public class KeyAgreement {
+import co.chatsdk.core.types.KeyValue;
 
+public class KeyAgreement {
+    int max_skip = 5;//what is good max skip amount??
     public KeyAgreement(){
 
     }
@@ -87,6 +90,7 @@ public class KeyAgreement {
         byte[] rootK = root.getEncoded();
         byte[] outputMaterial;
         try{
+            Mac mac = Mac.getInstance("SHA256");//change
             //HKDF using SHA-256 or 512
             //root as salt, output as input,
             //make own HDKF or use github api I found
@@ -151,7 +155,7 @@ public class KeyAgreement {
         return k;
      }
 
-     public String encrypt(Key messageKey, String plainText, String data){
+     public String encrypt(Key messageKey, String plainText, byte[] data){
         String s = "";
         try{
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
@@ -161,7 +165,7 @@ public class KeyAgreement {
         return s;
      }
 
-     public String decrypt(Key messageKey, String cipherText, String data){
+     public String decrypt(Key messageKey, String cipherText, byte[] data){
         String s = "";
         try{
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
@@ -174,11 +178,11 @@ public class KeyAgreement {
         return s;
      }
 
-     public String header(KeyPair dhPair, int chainLength, int messageNumber){
-        String s = "";
+     public Header header(KeyPair dhPair, int chainLength, int messageNumber){
+        Header header = new Header();
         //create new message header containing DH ratchet public key from the key pair
          //Header Object?
-        return s;
+        return header;
      }
 
      public byte[] hencrypt(Key headerKey, String plainText){
@@ -223,15 +227,15 @@ public class KeyAgreement {
     //To allow Bob and ALice to send messages immediately after initialization Bob's
     // sending chain key and Alice's receiving chain key could be initialized to a
     // shared secret.
-     public Key kdf_rk_he(Key root, KeyPair output){
+     public Key kdf_rk_he(State state, Key root, KeyPair output){
         Key k = null;
          //returns new root key, chain key, and next header key as output of applying
          //KDF keyed by root jey ot DH output
          //how to return all three??
         return k;
      }
-     public String concat(byte[] seq, String header){
-        String s = "";
+     public byte[] concat(byte[] seq, Header header){
+        byte[] s = null;
         //encodes message header into parsable byte seq, prepends ad and returns
          //result.
         return s;
@@ -248,63 +252,72 @@ public class KeyAgreement {
     //public void onCancelled(DatabaseError databaseError){
     //Log.w(TAG, "loadPost:onCancelled", databaseError.toException());}
     //TO retrieve data, use Query q =...
-    public Key ratchetEncrypt(String plainText, byte[] associatedData){
-        Key k = null;
-        //Pair p = KDF_CK(SUer.SendingKey); User.SendingKey = p.first;
-        //user.MessageKey = p.second;
-        //header = HEADER(user.sending, user.previousNumberInMessageChain,
-        // user.numberSending); user.numberSending++; return pair
-        //(header, ENCRYPT(messageKey, plaintext, CONCAT(associatedData, header)));
+    public Pair ratchetEncrypt(State state, String plainText, byte[] associatedData){
+        Key messageKey = null;
+        Pair<Header, Key> k = null;//header key or string? byte[]??
+        Pair<Key, Key> pair = KDF_CK(state.chainKeyReceiving);
+        state.chainKeyReceiving = pair.first;
+        messageKey = pair.second;
+        Header header = header(state.sendingKey, state.numberOfMessagesInChain, state.messageNumberSent);
+        state.messageNumberSent++;
+        k = new Pair(header, encrypt(messageKey, plainText, concat(associatedData, header)));
         return k;
     }
 
-    public String ratchetDecrypt(){
-        //If the message corresponds to a skipped message key this function decrypts the
-        // message, deletes the message key, and returns.
-        //Otherwise, if a new ratchet key has been received this function stores any skipped
-        //message keys from the receiving chain and performs a DH ratchet step to replace the
-        //sending and receiving chains.
-        //This function then stores any skipped message keys from the current receiving chain,
-        //performs a symmetric-key ratchet step to derive the relevant message key and next chain
-        //key, and decrypts the message.
-        //plainText = TrySkippedMessageKeys(user, header, cipherText, associated);
-        //if plaintext != None: return plainText; if header.dh != user.receiving:
-        //SkipMessageKeys(user, header.previous#InMesageChain); DHRATCHET(user, header);
-        //SkipMessageKeys(user, header.n);
-        //user.receiving, mk = KDF_CK(user.receiving)
-        //    state.Nr += 1
-        //    return DECRYPT(mk, ciphertext, CONCAT(AD, header))
-        String s = "";
-        return s;
+    public String ratchetDecrypt(State state, Header header, String cipherText, byte[] associated){
+        String plainText = TrySkippedMessageKeys(state, header, cipherText, associated);
+        if(plainText != null){
+            return plainText;
+        }
+        if(header.dh != state.receivingKey){
+            SkipMessageKeys(state, header.numberOfMessagesInPReviousChain);
+            DHRatchet(state, header);
+        }
+        SkipMessageKeys(state, header.n);
+        Pair<Key, Key> pair = KDF_CK(state.chainKeyReceiving);
+        state.chainKeyReceiving = pair.first;
+        Key messageKey = pair.second;
+        state.messageNumberReceived++;
+        return decrypt(messageKey, cipherText, concat(associated, header));
     }
 
-    public void TrySkippedMessageKeys(String header, String cipherText, byte[] AD){
-        //if (header.dh, header.n) in state.MKSKIPPED:
-        //        mk = state.MKSKIPPED[header.dh, header.n]
-        //        del state.MKSKIPPED[header.dh, header.n]
-        //        return DECRYPT(mk, ciphertext, CONCAT(AD, header))
-        //    else:
-        //        return
-        //change header to header object? and based on user
+    public String TrySkippedMessageKeys(State state, Header header, String cipherText, byte[] AD){
+       if(state.skippedMessages.containsKey(header.dh) && state.skippedMessages.get(header.dh)== header.n){
+           Key messageKey = null;
+           //mk = state.MKSKIPPED[header.dh, header.n]
+           //go from python which does this to java??
+           return decrypt(messageKey, cipherText, concat(AD, header));
+       }
+       else {return null;}
+
     }
 
-    public void SkipMessageKeys(int until){
-        //if state.Nr + MAX_SKIP < until:
-        //        raise Error()
-        //    if state.CKr != None:
-        //        while state.Nr < until:
-        //            state.CKr, mk = KDF_CK(state.CKr)
-        //            state.MKSKIPPED[state.DHr, state.Nr] = mk
-        //            state.Nr += 1
+    public void SkipMessageKeys(State state, int until){
+        if (state.messageNumberReceived + max_skip < until){
+            //raise Error()
+        }
+        if (state.chainKeyReceiving != null)//or none?
+                while (state.messageNumberReceived < until){
+                    Pair<Key, Key> receivingMessagePair = KDF_CK(state.chainKeyReceiving);
+                    state.chainKeyReceiving = receivingMessagePair.first;
+                    Key messageKey = receivingMessagePair.second;
+                    //state.skippedMessages.get(state.receivingKey) = messageKey;
+                    state.messageNumberReceived += 1;
+                }
+
     }
 
-    public void DHRacthet(String header){
-        //state.PN = state.Ns
-        //    state.Ns = 0
-        //    state.Nr = 0
-        //    state.DHr = header.dh
-        //    state.RK, state.CKr = KDF_RK(state.RK, DH(state.DHs, state.DHr))
-        //    state.DHs = GENERATE_DH()
-        //    state.RK, state.CKs = KDF_RK(state.RK, DH(state.DHs, state.DHr))
+    public void DHRatchet(State state, Header header){
+            state.numberOfMessagesInChain = state.messageNumberSent;
+            state.messageNumberSent = 0;
+            state.messageNumberReceived = 0;
+            state.receivingKey = header.dh;
+            Pair<Key, Key> rootReceivingPair = KDF_RK(state.rootKey, DH(state.sendingKey, state.receivingKey));
+            state.rootKey = rootReceivingPair.first;
+            state.chainKeyReceiving = rootReceivingPair.second;
+            state.sendingKey = generate_DH();
+            Pair<Key, Key> rootSendingPair = KDF_RK(state.rootKey, DH(state.sendingKey, state.receivingKey));
+            state.rootKey = rootSendingPair.first;
+            state.chainKeySending = rootSendingPair.second;
     }
 }
