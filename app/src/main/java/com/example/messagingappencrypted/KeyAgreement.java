@@ -178,25 +178,27 @@ public class KeyAgreement {
         return s;
      }
 
-     public Header header(KeyPair dhPair, int chainLength, int messageNumber){
-        Header header = new Header();
+     public String header(KeyPair dhPair, int chainLength, int messageNumber){
+        String header = "";
+        //yes use public key
+         //edDSA based on shnorr
         //create new message header containing DH ratchet public key from the key pair
          //Header Object?
         return header;
      }
 
-     public byte[] hencrypt(Key headerKey, String plainText){
-        byte[] bytes = new byte[30];
+     public String hencrypt(Key headerKey, String plainText){
+        String bytes = "";
         //AEAD encryption of plaintext with header key
          //nonce must be either non-repeating or ranodm non-repeating chosen with
          //128 bits of entropy
         return bytes;
      }
 
-     public byte[] hdecrypt(Key headerKey, String plaintext){
-        byte[] bytes = new byte[20];
+     public Header hdecrypt(Key headerKey, String plaintext){
+        Header header = new Header();
         //AEAD, if authentication fails or headerKey is empty, return NONE
-        return bytes;
+        return header;
      }
     //headers contain ratchet public keys and (PN, N) values
     //each party stores symmetric header key and next header key
@@ -234,8 +236,8 @@ public class KeyAgreement {
          //how to return all three??
         return k;
      }
-     public byte[] concat(byte[] seq, Header header){
-        byte[] s = null;
+     public byte[] concat(byte[] seq, String header){
+        byte[] s = new byte[30];
         //encodes message header into parsable byte seq, prepends ad and returns
          //result.
         return s;
@@ -258,9 +260,10 @@ public class KeyAgreement {
         Pair<Key, Key> pair = KDF_CK(state.chainKeyReceiving);
         state.chainKeyReceiving = pair.first;
         messageKey = pair.second;
-        Header header = header(state.sendingKey, state.numberOfMessagesInChain, state.messageNumberSent);
+        String header = header(state.sendingKey, state.numberOfMessagesInChain, state.messageNumberSent);
+        String encryptedHeader = hencrypt(state.nextHeaderSending, header);
         state.messageNumberSent++;
-        k = new Pair(header, encrypt(messageKey, plainText, concat(associatedData, header)));
+        k = new Pair(header, encrypt(messageKey, plainText, concat(associatedData, encryptedHeader)));
         return k;
     }
 
@@ -270,7 +273,7 @@ public class KeyAgreement {
             return plainText;
         }
         if(header.dh != state.receivingKey){
-            SkipMessageKeys(state, header.numberOfMessagesInPReviousChain);
+            SkipMessageKeys(state, header.numberOfMessagesInPreviousChain);
             DHRatchet(state, header);
         }
         SkipMessageKeys(state, header.n);
@@ -290,6 +293,22 @@ public class KeyAgreement {
        }
        else {return null;}
 
+    }
+
+    public Pair<Header, Boolean> decryptHeader(State state, String encryptedHeader){
+        Pair<Header, Boolean> p = null;
+        Header header = hdecrypt(state.headerReceiving, encryptedHeader);
+        if(header != null){
+            p = new Pair(header, false);
+            return p;
+        }
+        header = hdecrypt(state.nextHeaderReceiving, encryptedHeader);
+        if(header != null){
+            p = new Pair(header, true);
+            return p;
+        }
+        else { return null;//
+        }
     }
 
     public void SkipMessageKeys(State state, int until){
@@ -320,4 +339,13 @@ public class KeyAgreement {
             state.rootKey = rootSendingPair.first;
             state.chainKeySending = rootSendingPair.second;
     }
+
+    //can just do string
+    //DH Ratchet:
+    //each party generates dh key pair that becomes their current ratchet key pair
+    //every messages from either party has a header which contains the senders
+    //current ratchet public key
+    //when new public key received, dh ratchet step is performed,
+    //which replaces the local party's current ratchet key pair with a new pair
+    //
 }

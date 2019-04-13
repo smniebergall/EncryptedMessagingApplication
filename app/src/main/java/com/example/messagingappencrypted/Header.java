@@ -5,7 +5,7 @@ import java.security.KeyPair;
 
 public class Header {
     Key dh;
-    int numberOfMessagesInPReviousChain;
+    int numberOfMessagesInPreviousChain;
     Integer n;
 
     public Header(){
