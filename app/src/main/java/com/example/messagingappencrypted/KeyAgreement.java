@@ -24,19 +24,6 @@ public class KeyAgreement {
     public KeyAgreement(){
 
     }
-    //DH(PK1,PK2): byte sequence which is shared secret
-    //SIg(PK, M): byte sequence that is XEdDSA signature on the byte sequence
-    //M and verifies with PK, which was created by signing M with PK's
-    //corresponding private key.
-    //KDF(KM): 32 bytes of output from the HKDF algorithm with inputs:
-    //key- F concat KM, where KM is input byte seqeunce containign secret key
-    //material and F is byte sequence of either 32 0xFF bytes if X25519
-    //or 57 0xFF bytes if X448
-    //salt- a zero filled byte sequence with equal length to the hash output len
-    //info - info parameter above
-    //IKA is A's identity key, IKB is B's identity, EKA is A's medium key
-    //SPKB is B's signed prekey, OPKB is B's one time prekey
-    //
     //Step 1: Alice gets prekey bundle from server. Serve gives one of the one-time
     //prekeys and then deletes it. If there isnt one, no one time prekey is given
     //ALice verifies prekey signature and if it works then creates EKA key pair
@@ -357,13 +344,10 @@ public class KeyAgreement {
             state.chainKeySending = rootSendingPair.first.second;
             state.nextHeaderSending = rootSendingPair.second;
     }
-
-    //can just do string
     //DH Ratchet:
     //each party generates dh key pair that becomes their current ratchet key pair
     //every messages from either party has a header which contains the senders
     //current ratchet public key
     //when new public key received, dh ratchet step is performed,
     //which replaces the local party's current ratchet key pair with a new pair
-    //
 }
