@@ -7,7 +7,9 @@ import java.security.KeyPair;
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -19,6 +21,7 @@ public class User {
     ActualKeyBundle actualBundle;
     KeyAgreement k;
     List<State> states;
+
     public User(String userID){
         this.userID = userID;
         states = null;
@@ -44,8 +47,130 @@ public class User {
         k = new KeyAgreement();
         state.sendingKey = k.generate_DH();
         state.receivingKey = pub;
-        KeyPair result = k.DH(state.sendingKey, state.receivingKey);
+        state.skippedMessagesList = new List<Pair<Key, Integer>>() {
+            @Override
+            public int size() {
+                return 0;
+            }
+
+            @Override
+            public boolean isEmpty() {
+                return false;
+            }
+
+            @Override
+            public boolean contains(@Nullable Object o) {
+                return false;
+            }
+
+            @NonNull
+            @Override
+            public Iterator<Pair<Key, Integer>> iterator() {
+                return null;
+            }
+
+            @Nullable
+            @Override
+            public Object[] toArray() {
+                return new Object[0];
+            }
+
+            @Override
+            public <T> T[] toArray(@Nullable T[] a) {
+                return null;
+            }
+
+            @Override
+            public boolean add(Pair<Key, Integer> keyIntegerPair) {
+                return false;
+            }
+
+            @Override
+            public boolean remove(@Nullable Object o) {
+                return false;
+            }
+
+            @Override
+            public boolean containsAll(@NonNull Collection<?> c) {
+                return false;
+            }
+
+            @Override
+            public boolean addAll(@NonNull Collection<? extends Pair<Key, Integer>> c) {
+                return false;
+            }
+
+            @Override
+            public boolean addAll(int index, @NonNull Collection<? extends Pair<Key, Integer>> c) {
+                return false;
+            }
+
+            @Override
+            public boolean removeAll(@NonNull Collection<?> c) {
+                return false;
+            }
+
+            @Override
+            public boolean retainAll(@NonNull Collection<?> c) {
+                return false;
+            }
+
+            @Override
+            public void clear() {
+
+            }
+
+            @Override
+            public Pair<Key, Integer> get(int index) {
+                return null;
+            }
+
+            @Override
+            public Pair<Key, Integer> set(int index, Pair<Key, Integer> element) {
+                return null;
+            }
+
+            @Override
+            public void add(int index, Pair<Key, Integer> element) {
+
+            }
+
+            @Override
+            public Pair<Key, Integer> remove(int index) {
+                return null;
+            }
+
+            @Override
+            public int indexOf(@Nullable Object o) {
+                return 0;
+            }
+
+            @Override
+            public int lastIndexOf(@Nullable Object o) {
+                return 0;
+            }
+
+            @NonNull
+            @Override
+            public ListIterator<Pair<Key, Integer>> listIterator() {
+                return null;
+            }
+
+            @NonNull
+            @Override
+            public ListIterator<Pair<Key, Integer>> listIterator(int index) {
+                return null;
+            }
+
+            @NonNull
+            @Override
+            public List<Pair<Key, Integer>> subList(int fromIndex, int toIndex) {
+                return null;
+            }
+        };
+        Key result = k.DH(state.sendingKey, state.receivingKey);
         Pair<Key, Key> res = k.KDF_RK(secret, result);
+        //change KDF_RK second argument to regular key?
         state.rootKey = res.first;
         state.chainKeySending = res.second;
         state.messageNumberReceived = 0;

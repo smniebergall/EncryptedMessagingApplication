@@ -1,8 +1,11 @@
 package com.example.messagingappencrypted;
 
+import android.util.Pair;
+
 import java.security.Key;
 import java.security.KeyPair;
 import java.util.Dictionary;
+import java.util.List;
 import java.util.Map;
 
 public class State {
@@ -19,6 +22,7 @@ public class State {
     int messageNumberReceived;
     int messageNumberSent;
     int numberOfMessagesInChain;
+    List<Pair<Key, Integer>> skippedMessagesList;
     Map<Key, Integer> skippedMessages;//indexed by header key and message number
     //instead of this
     public State(){
