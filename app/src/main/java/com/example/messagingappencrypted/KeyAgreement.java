@@ -295,14 +295,12 @@ public class KeyAgreement {
     public byte[] TrySkippedMessageKeys(State state, byte[] h, byte[] cipherText, byte[] AD){
         Header header = new Header();
         Key messageKey = null;
-        Iterator<Key> itr = state.skippedMessages.keySet().iterator();
-        for(Iterator<Map.Entry<Key, Integer>> entries = state.skippedMessages.entrySet().iterator(); entries.hasNext();){
-            Map.Entry<Key, Integer> entry = entries.next();
-            header = hdecrypt(entry.getKey(), h);
-            if(header != null && header.n == entry.getValue()){
-                //messageKey = 0;
-                //somehow get messageKey??
-                //they do ((headerKey, n), messageKey)
+        Iterator<Pair<Key,Integer>> itr = state.skippedMessages.keySet().iterator();
+        for(Iterator<Map.Entry<Pair<Key, Integer>, Key>> entries = state.skippedMessages.entrySet().iterator(); entries.hasNext();){
+            Map.Entry<Pair<Key, Integer>, Key> entry = entries.next();
+            header = hdecrypt(entry.getKey().first, h);
+            if(header != null && header.n == entry.getKey().second){
+                messageKey = entry.getValue();
                 state.skippedMessages.remove(entry.getKey());
                 return decrypt(messageKey, cipherText, concat(AD, h));
             }
@@ -335,7 +333,8 @@ public class KeyAgreement {
                     Pair<Key, Key> receivingMessagePair = KDF_CK(state.chainKeyReceiving);
                     state.chainKeyReceiving = receivingMessagePair.first;
                     Key messageKey = receivingMessagePair.second;
-                    //state.skippedMessages.get(state.receivingKey) = messageKey;
+                    Pair<Key, Integer> p = new Pair(state.headerReceiving, state.messageNumberReceived);
+                    state.skippedMessages.put(p, messageKey);
                     state.messageNumberReceived++;
                 }
 

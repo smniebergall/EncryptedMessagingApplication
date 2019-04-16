@@ -22,8 +22,7 @@ public class State {
     int messageNumberReceived;
     int messageNumberSent;
     int numberOfMessagesInChain;
-    List<Pair<Key, Integer>> skippedMessagesList;
-    Map<Key, Integer> skippedMessages;//indexed by header key and message number
+    Map<Pair<Key, Integer>, Key> skippedMessages;//indexed by header key and message number
     //instead of this
     public State(){
 

@@ -47,127 +47,6 @@ public class User {
         k = new KeyAgreement();
         state.sendingKey = k.generate_DH();
         state.receivingKey = pub;
-        state.skippedMessagesList = new List<Pair<Key, Integer>>() {
-            @Override
-            public int size() {
-                return 0;
-            }
-
-            @Override
-            public boolean isEmpty() {
-                return false;
-            }
-
-            @Override
-            public boolean contains(@Nullable Object o) {
-                return false;
-            }
-
-            @NonNull
-            @Override
-            public Iterator<Pair<Key, Integer>> iterator() {
-                return null;
-            }
-
-            @Nullable
-            @Override
-            public Object[] toArray() {
-                return new Object[0];
-            }
-
-            @Override
-            public <T> T[] toArray(@Nullable T[] a) {
-                return null;
-            }
-
-            @Override
-            public boolean add(Pair<Key, Integer> keyIntegerPair) {
-                return false;
-            }
-
-            @Override
-            public boolean remove(@Nullable Object o) {
-                return false;
-            }
-
-            @Override
-            public boolean containsAll(@NonNull Collection<?> c) {
-                return false;
-            }
-
-            @Override
-            public boolean addAll(@NonNull Collection<? extends Pair<Key, Integer>> c) {
-                return false;
-            }
-
-            @Override
-            public boolean addAll(int index, @NonNull Collection<? extends Pair<Key, Integer>> c) {
-                return false;
-            }
-
-            @Override
-            public boolean removeAll(@NonNull Collection<?> c) {
-                return false;
-            }
-
-            @Override
-            public boolean retainAll(@NonNull Collection<?> c) {
-                return false;
-            }
-
-            @Override
-            public void clear() {
-
-            }
-
-            @Override
-            public Pair<Key, Integer> get(int index) {
-                return null;
-            }
-
-            @Override
-            public Pair<Key, Integer> set(int index, Pair<Key, Integer> element) {
-                return null;
-            }
-
-            @Override
-            public void add(int index, Pair<Key, Integer> element) {
-
-            }
-
-            @Override
-            public Pair<Key, Integer> remove(int index) {
-                return null;
-            }
-
-            @Override
-            public int indexOf(@Nullable Object o) {
-                return 0;
-            }
-
-            @Override
-            public int lastIndexOf(@Nullable Object o) {
-                return 0;
-            }
-
-            @NonNull
-            @Override
-            public ListIterator<Pair<Key, Integer>> listIterator() {
-                return null;
-            }
-
-            @NonNull
-            @Override
-            public ListIterator<Pair<Key, Integer>> listIterator(int index) {
-                return null;
-            }
-
-            @NonNull
-            @Override
-            public List<Pair<Key, Integer>> subList(int fromIndex, int toIndex) {
-                return null;
-            }
-        };
         Key result = k.DH(state.sendingKey, state.receivingKey);
         Pair<Key, Key> res = k.KDF_RK(secret, result);
         //change KDF_RK second argument to regular key?
@@ -176,7 +55,7 @@ public class User {
         state.messageNumberReceived = 0;
         state.messageNumberSent = 0;
         state.numberOfMessagesInChain = 0;
-        state.skippedMessages = new Map<Key, Integer>() {
+        state.skippedMessages = new Map<Pair<Key, Integer>, Key>() {
             @Override
             public int size() {
                 return 0;
@@ -199,24 +78,24 @@ public class User {
 
             @Nullable
             @Override
-            public Integer get(@Nullable Object key) {
+            public Key get(@Nullable Object key) {
                 return null;
             }
 
             @Nullable
             @Override
-            public Integer put(@NonNull Key key, @NonNull Integer value) {
+            public Key put(@NonNull Pair<Key, Integer> key, @NonNull Key value) {
                 return null;
             }
 
             @Nullable
             @Override
-            public Integer remove(@Nullable Object key) {
+            public Key remove(@Nullable Object key) {
                 return null;
             }
 
             @Override
-            public void putAll(@NonNull Map<? extends Key, ? extends Integer> m) {
+            public void putAll(@NonNull Map<? extends Pair<Key, Integer>, ? extends Key> m) {
 
             }
 
@@ -227,28 +106,24 @@ public class User {
 
             @NonNull
             @Override
-            public Set<Key> keySet() {
+            public Set<Pair<Key, Integer>> keySet() {
                 return null;
             }
 
             @NonNull
             @Override
-            public Collection<Integer> values() {
+            public Collection<Key> values() {
                 return null;
             }
 
             @NonNull
             @Override
-            public Set<Entry<Key, Integer>> entrySet() {
+            public Set<Entry<Pair<Key, Integer>, Key>> entrySet() {
                 return null;
             }
         };
-
     }
 
-   /* public Pair ratchetEncrypt(String plainText, String data){
-        Pair<Key, Key> p = k.KDF_CK(this.chainKey);
-    }*/
 }
 //double ratchet used to exchange encrypted messages on a shared secret key
 //X3DH makes the secret key to exchange messages
