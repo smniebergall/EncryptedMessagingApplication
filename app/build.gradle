@@ -50,5 +50,9 @@ dependencies {
     implementation 'co.chatsdk.chatsdk:chat-sdk-firebase-file-storage:4.6.0'
     implementation 'co.chatsdk.chatsdk:chat-sdk-firebase-push:4.6.0'
     implementation 'com.google.android.material:material:1.0.0'
+    implementation 'com.madgag.spongycastle:core:1.58.0.0'
+    implementation 'com.madgag.spongycastle:prov:1.58.0.0'
+    implementation 'com.madgag.spongycastle:pkix:1.54.0.0'
+    implementation 'com.madgag.spongycastle:pg:1.54.0.0'
 }
 apply plugin: 'com.google.gms.google-services'

@@ -3,6 +3,9 @@ package com.example.messagingappencrypted;
 import android.security.keystore.KeyGenParameterSpec;
 import android.util.Pair;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.Signature;
@@ -12,15 +15,25 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.bouncycastle.*;
+import org.spongycastle.crypto.Digest;
+import org.spongycastle.crypto.digests.SHA256Digest;
+import org.spongycastle.crypto.generators.HKDFBytesGenerator;
+import org.spongycastle.crypto.params.HKDFParameters;
 
 import javax.crypto.Cipher;
 import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
 
 import co.chatsdk.core.types.KeyValue;
 
 public class KeyAgreement {
     int max_skip = 5;//what is good max skip amount??
+    //byte[] info = new byte[16];
 
+    /*static {
+        Security.insertProviderAt(new org.spongycastle.jce.provider.BouncyCastleProvider(), 1);
+    }*/
     public KeyAgreement(){
 
     }
@@ -83,6 +96,7 @@ public class KeyAgreement {
         byte[] rootK = root.getEncoded();
         byte[] outputMaterial;
         try{
+
             Mac mac = Mac.getInstance("SHA256");//change
             //HKDF using SHA-256 or 512
             //root as salt, output as input,
@@ -148,21 +162,68 @@ public class KeyAgreement {
         return k;
      }
 
-     public byte[] encrypt(Key messageKey, String plainText, byte[] data){
-        byte[] bytes = null;
-        try{
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        }catch(GeneralSecurityException e){
+     public byte[] encrypt(Key messageKey, byte[] plainText, byte[] data){
+         byte[] bytes = null;
+         //IvParameterSpec IV = null;
 
-        }
+         //byte[] ivBytes = new byte[16];
+         //IV = new IvParameterSpec(ivBytes);
+         try{
+             //spongy castle does HKDF
+            byte[] salt = new byte[80];
+            byte[] info = new byte[20];//application specific byte sequence?
+            byte[] messagekey = messageKey.getEncoded();
+            HKDFParameters params = new HKDFParameters(messagekey, salt, info);
+            HKDFBytesGenerator hkdf = new HKDFBytesGenerator(new SHA256Digest());
+            hkdf.init(params);
+            byte[] result = new byte[80];
+            hkdf.generateBytes(result, 0,80);
+            byte[] encryptionKey = new byte[32];
+            byte[] authKey = new byte[32];
+            byte[] IV = new byte[16];
+            for(int i = 0; i < 31; i++){
+                encryptionKey[i] = result[i];//fix the arrays 0-32, 32-64, 64-80
+            }
+            for(int i = 32; i < 63; i++){
+                authKey[i] = result[i];
+            }
+            for(int i = 64; i < result.length-1; i++){
+                IV[i] = result[i];
+            }
+             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+             cipher.init(Cipher.ENCRYPT_MODE, messageKey, IV);
+             bytes = cipher.doFinal(plainText);
+            //HKDF SHA-256 or 512 to generate 80 bytes of output.
+            //salt is zero filled byte seq = hash's output length.
+            //input key material is messageKey
+            //info is set to application specific byte sequence, so global private??
+            //HKDF is 32-byte encryption key, 32-byte authentication key
+            //and 16-byte IV
+            //then encrypt plaintext using AES above
+            //HMAC input is data prepended to ciphertext and output is
+            //appended to ciphertext
+
+         }catch(GeneralSecurityException e){
+
+         }
         return bytes;
      }
 
      public byte[] decrypt(Key messageKey, byte[] cipherText, byte[] data){
         byte[] bytes = null;
+        SecureRandom s = new SecureRandom();
+        IvParameterSpec IV;
+        byte[] ivBytes = new byte[16];
+        s.nextBytes(ivBytes);
+        IV = new IvParameterSpec(ivBytes);
         try{
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, messageKey, IV);
+            bytes = cipher.doFinal(cipherText);
+            //decryption of ciphertext with messagekey.
+            //using encryption key and IV from previous step
             //with 16-byte IV
+            //specify UTF-8 when converting bytes to string
         }catch(GeneralSecurityException e){
 
         }
@@ -182,6 +243,18 @@ public class KeyAgreement {
 
      public byte[] hencrypt(Key headerKey, byte[] plainText){
         byte[] bytes = null;
+         SecureRandom s = new SecureRandom();
+         IvParameterSpec IV;
+         byte[] ivBytes = new byte[16];
+         s.nextBytes(ivBytes);
+         IV = new IvParameterSpec(ivBytes);
+        try{
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, headerKey, IV);
+            bytes = cipher.doFinal(plainText);
+        }catch(GeneralSecurityException e){
+
+        }
         //AEAD encryption of plaintext with header key
          //nonce must be either non-repeating or ranodm non-repeating chosen with
          //128 bits of entropy
@@ -189,7 +262,26 @@ public class KeyAgreement {
      }
 
      public Header hdecrypt(Key headerKey, byte[] plaintext){
-        Header header = new Header();
+         if(headerKey == null){
+             return null;
+         }
+         Header header = new Header();
+         SecureRandom s = new SecureRandom();
+         IvParameterSpec IV;
+         byte[] bytes = null;
+         byte[] ivBytes = new byte[16];
+         s.nextBytes(ivBytes);
+         IV = new IvParameterSpec(ivBytes);
+        try{
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, headerKey, IV);
+            bytes = cipher.doFinal(plaintext);
+            //now turn bytes into a header object
+            //need dh public key and number of messages in previous chain and n
+            //n = message number
+        }catch(GeneralSecurityException e){
+
+        }
         //AEAD, if authentication fails or headerKey is empty, return NONE
         return header;
      }
@@ -217,6 +309,7 @@ public class KeyAgreement {
          //KDF keyed by root key to DH output
          //how to return all three??
          Pair<Pair<Key, Key>, Key> keys = null;
+         //Pair<Pair<RootKey, ChainKey>, nextHeaderKey>
          return keys;
      }
      public byte[] concat(byte[] seq, byte[] header){
@@ -228,10 +321,6 @@ public class KeyAgreement {
         for(int j = seq.length; j < header.length; j++){
             s[j] = header[j];
         }
-
-        //String or Header object??
-        //encodes message header into parsable byte seq, prepends ad and returns
-         //result.
         return s;
      }
     //to retrieve info from firebase...
@@ -252,10 +341,11 @@ public class KeyAgreement {
         Pair<Key, Key> pair = KDF_CK(state.chainKeyReceiving);
         state.chainKeyReceiving = pair.first;
         messageKey = pair.second;
+        byte[] bytesPlainText = plainText.getBytes(Charset.forName("UTF-8"));
         byte[] header = header(state.sendingKey, state.numberOfMessagesInChain, state.messageNumberSent);
         byte[] encryptedHeader = hencrypt(state.nextHeaderSending, header);
         state.messageNumberSent++;
-        k = new Pair(header, encrypt(messageKey, plainText, concat(associatedData, encryptedHeader)));
+        k = new Pair(header, encrypt(messageKey, bytesPlainText, concat(associatedData, encryptedHeader)));
         return k;
     }
 
@@ -350,4 +440,18 @@ public class KeyAgreement {
     //current ratchet public key
     //when new public key received, dh ratchet step is performed,
     //which replaces the local party's current ratchet key pair with a new pair
+
+
+    //TO DO
+    //add spongy castle
+    //finish X3DH signatures with elliptic curves
+    //put into actual messages to display
+    //chack with hard coding that encryption and decryption work
+    //finish KDF functions
+    //add errors where appropraite
+    //finish look of login and any other activity
+    //get rid of spongy castle, only need bouncy castle
+    //change spongy castle provider in code to none
+    //fix for loops
+    //java starts at 0 so need length-1
 }
