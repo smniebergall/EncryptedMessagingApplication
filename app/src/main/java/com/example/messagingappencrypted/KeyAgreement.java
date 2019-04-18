@@ -24,6 +24,7 @@ import org.spongycastle.crypto.params.HKDFParameters;
 import javax.crypto.Cipher;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import co.chatsdk.core.types.KeyValue;
 
@@ -91,16 +92,27 @@ public class KeyAgreement {
          return a;
      }
 
-     public Pair KDF_RK(Key root, Key output){
-        Pair k = null;
+     public Pair<Key, Key> KDF_RK(Key root, Key output){
+        Pair<Key, Key> k = null;
         byte[] rootK = root.getEncoded();
         byte[] outputMaterial;
         try{
-
             Mac mac = Mac.getInstance("SHA256");//change
-            //HKDF using SHA-256 or 512
-            //root as salt, output as input,
-            //make own HDKF or use github api I found
+            byte[] salt = root.getEncoded();
+            byte[] info;
+            String s = "info for HKDF with Root Key";
+            info = s.getBytes(Charset.forName("UTF-8"));
+            byte[] outputKey = output.getEncoded();
+            HKDFParameters params = new HKDFParameters(outputKey, salt, info);
+            HKDFBytesGenerator hkdf = new HKDFBytesGenerator(new SHA256Digest());
+            hkdf.init(params);
+            byte[] result = new byte[64];
+            hkdf.generateBytes(result, 0,64);
+            byte[] rootKeyResult = new byte[32];
+            byte[] chainKeyResult = new byte[32];
+            System.arraycopy(result, 0, rootKeyResult, 0, rootKeyResult.length);
+            System.arraycopy(result, 0, chainKeyResult, 0, chainKeyResult.length);
+            Key chain =
         }catch(GeneralSecurityException e){
 
         }
@@ -137,16 +149,19 @@ public class KeyAgreement {
     //c.init(Cipher.ENCRYPT_MODE, secretKey, myParams);
     //MAC class (HMACSha256)
     //MessageDIgest sha = MessageDIgest.getInstance("SHA-256");
-     public Pair KDF_CK(Key chain){
-        Pair k = null;
+     public Pair<Key, Key> KDF_CK(Key chain){
+        Pair<Key, Key> k = null;
         //need to turn string chain key into speicific kind of key like SecretKeySpec
          //new SecretKeySPec(key.getBytes("UTF-8"), "AES") for example
          //so elliptic version?
          //byte[] chains =
          try{
-
+             //HMAC SHA256
+             //chain key as HMAC key and separate input
+             //0x01 for message key and 0x02 for next chian key
              Mac HMAC_SHA256 = Mac.getInstance("HmacSHA256");
              HMAC_SHA256.init(chain);
+             //HMAC_SHA256.
 
          }catch(GeneralSecurityException e){
 
@@ -164,14 +179,12 @@ public class KeyAgreement {
 
      public byte[] encrypt(Key messageKey, byte[] plainText, byte[] data){
          byte[] bytes = null;
-         //IvParameterSpec IV = null;
-
-         //byte[] ivBytes = new byte[16];
-         //IV = new IvParameterSpec(ivBytes);
          try{
              //spongy castle does HKDF
             byte[] salt = new byte[80];
-            byte[] info = new byte[20];//application specific byte sequence?
+            byte[] info;
+            String s = "info for HKDF";
+            info = s.getBytes(Charset.forName("UTF-8"));
             byte[] messagekey = messageKey.getEncoded();
             HKDFParameters params = new HKDFParameters(messagekey, salt, info);
             HKDFBytesGenerator hkdf = new HKDFBytesGenerator(new SHA256Digest());
@@ -180,7 +193,7 @@ public class KeyAgreement {
             hkdf.generateBytes(result, 0,80);
             byte[] encryptionKey = new byte[32];
             byte[] authKey = new byte[32];
-            byte[] IV = new byte[16];
+            byte[] IV = new byte[16];//is this correct order?
             for(int i = 0; i < 31; i++){
                 encryptionKey[i] = result[i];//fix the arrays 0-32, 32-64, 64-80
             }
@@ -190,19 +203,21 @@ public class KeyAgreement {
             for(int i = 64; i < result.length-1; i++){
                 IV[i] = result[i];
             }
-             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-             cipher.init(Cipher.ENCRYPT_MODE, messageKey, IV);
-             bytes = cipher.doFinal(plainText);
-            //HKDF SHA-256 or 512 to generate 80 bytes of output.
-            //salt is zero filled byte seq = hash's output length.
-            //input key material is messageKey
-            //info is set to application specific byte sequence, so global private??
-            //HKDF is 32-byte encryption key, 32-byte authentication key
-            //and 16-byte IV
-            //then encrypt plaintext using AES above
-            //HMAC input is data prepended to ciphertext and output is
-            //appended to ciphertext
-
+             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");//change to PCKS7Padding
+             //from bouncy castle??
+             IvParameterSpec iv = new IvParameterSpec(IV);
+             SecretKeySpec encKey = new SecretKeySpec(encryptionKey, "AES");
+             SecretKeySpec aKey = new SecretKeySpec(authKey, "HMAC_SHA256");//Is this right??
+             cipher.init(Cipher.ENCRYPT_MODE, encKey, iv);
+             //aKey may need to be AES also, since it's 32-byte
+             //but any sha256 is 32 byte
+             byte[] encrypted = cipher.doFinal(plainText);
+             Mac mac = Mac.getInstance("HmacSHA256");
+             mac.init(aKey);
+             byte[] hmac = mac.doFinal(concat(data, encrypted));
+             bytes = new byte[hmac.length+encrypted.length];
+             System.arraycopy(encrypted, 0, bytes, 0, encrypted.length);
+             System.arraycopy(hmac, 0, bytes, encrypted.length, hmac.length);
          }catch(GeneralSecurityException e){
 
          }
@@ -219,16 +234,19 @@ public class KeyAgreement {
         try{
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, messageKey, IV);
-            bytes = cipher.doFinal(cipherText);
-            //decryption of ciphertext with messagekey.
-            //using encryption key and IV from previous step
-            //with 16-byte IV
-            //specify UTF-8 when converting bytes to string
+            byte[] decrypted = cipher.doFinal(cipherText);
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(messageKey);
+            byte[] hmac = mac.doFinal(concat(data, decrypted));
+            bytes = new byte[hmac.length+decrypted.length];
+            System.arraycopy(decrypted, 0, bytes, 0, decrypted.length);
+            System.arraycopy(hmac, 0, bytes, decrypted.length, hmac.length);
+            //if authentictaion fails, exception is raised
+            //but what is associated data and hwo does authentication fail
+            //it has to match something right?? what??
         }catch(GeneralSecurityException e){
 
         }
-        //returns AEAD decryption os ciphertext with message key
-         //authentication fails, exception
         return bytes;
      }
 
@@ -308,7 +326,15 @@ public class KeyAgreement {
          //returns new root key, chain key, and next header key as output of applying
          //KDF keyed by root key to DH output
          //how to return all three??
+         //probbaly still EC DH key??
          Pair<Pair<Key, Key>, Key> keys = null;
+         try{
+             KeyFactory kf = KeyFactory.getInstance("EC");
+             //how to change from byte[] to Key
+             //what type of Key??
+         }catch(GeneralSecurityException e){
+
+         }
          //Pair<Pair<RootKey, ChainKey>, nextHeaderKey>
          return keys;
      }
