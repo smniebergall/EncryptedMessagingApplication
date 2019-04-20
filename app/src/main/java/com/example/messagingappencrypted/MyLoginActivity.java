@@ -191,8 +191,9 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
         //identity key is public/private key pair,
         //KeyPairGenerator()
         try {
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("X25519");
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("X25519");//does this actally work
             generator.initialize(256);//what size??
+            //do i need to worry about 33 byte EC key to 32 byte key??
             KeyPair pair = generator.generateKeyPair();
             Key priv = pair.getPrivate();
             Key pub = pair.getPublic();
