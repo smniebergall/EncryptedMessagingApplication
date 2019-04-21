@@ -17,5 +17,6 @@ public class ActualKeyBundle {
         this.identity = identity;
         this.prekey = prekey;
         this.prekeys = prekeys;
+        this.ID = ID;
     }
 }

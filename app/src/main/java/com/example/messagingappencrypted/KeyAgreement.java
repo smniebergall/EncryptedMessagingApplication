@@ -37,6 +37,48 @@ public class KeyAgreement {
     public KeyAgreement(){
 
     }
+    public byte[] encode(Key pub){
+        return pub.getEncoded();
+        //The recommended encoding consists of some single-byte constant
+        // to represent the type of curve, followed by little-endian encoding
+        // of the u-coordinate as specified in [1].
+    }
+    //DH(PK1, PK2) represents a byte sequence which is the shared secret output
+    // from an Elliptic Curve Diffie-Hellman function involving the key pairs
+    // represented by public keys PK1 and PK2.
+
+    //ig(PK, M) represents a byte sequence that is an XEdDSA signature on the byte
+    // sequence M and verifies with public key PK, and which was created by signing
+    // M with PK's corresponding private key. The signing and verification functions
+    // for XEdDSA are specified in[2].
+
+    //for kdf, should i bed doing multiple kdfs?? or do the output of 80
+    //and chop into keys??
+
+    //IKA alices identity
+    //EKA alices ephemeralkey
+    //IKB bobs identity
+    //SPKB bobs signed prekey
+    //OPKB bobs one time prekey
+    //all keys must be within x25519 for this protocol X3DH
+
+    //KDF(KM) represents 32 bytes of output from the HKDF algorithm [3] with inputs:
+    // HKDF input key material = F || KM, where KM is an input byte sequence containing
+    // secret key material, and F is a byte sequence containing 32 0xFF bytes if curve is X25519,
+    // and 57 0xFF bytes if curve is X448. F is used for cryptographic domain separation with XEdDSA [2].
+    // HKDF salt = A zero-filled byte sequence with length equal to the hash output length.
+    // HKDF info = The info parameter from Section 2.1.
+
+    //Each party has a long-term identity public key (IKA for Alice, IKB for Bob).
+    //Bob also has a signed prekey SPKB, which he will change periodically, and a
+    // set of one-time prekeys OPKB, which are each used in a single X3DH protocol
+    //run. ("Prekeys" are so named because they are essentially protocol messages
+    // which Bob publishes to the server prior to Alice beginning the protocol run).
+    //During each protocol run, Alice generates a new ephemeral key pair with public
+    // key EKA.
+    //After a successful protocol run Alice and Bob will share a 32-byte secret key
+    // SK.
+
     //Step 1: Alice gets prekey bundle from server. Serve gives one of the one-time
     //prekeys and then deletes it. If there isnt one, no one time prekey is given
     //ALice verifies prekey signature and if it works then creates EKA key pair
@@ -54,11 +96,66 @@ public class KeyAgreement {
     //from some cryptographic PRF keyed by SK
 
     //A can continue using SK or keys derived from SK to communicate
+    public Key calculateSecretKey(User user, Key IKO, Key SPKO, Key signedPrekeyO, Key OPKO){
+        Key dh1 = DH(user.actualBundle.identity, signedPrekeyO);
+        Key dh2 = DH(user.actualBundle.prekey, IKO);//do i need diffrent
+        //dh function for specifically X3DH??
+        //elliptic curve diffie-hellman
+        //says
+        Key dh3 = DH(user.actualBundle.prekey, SPKO);
+        //maybe not current users prekey, make a new ephemeral key for this
+        if(OPKO != null){
+            Key dh4 = DH(user.actualBundle.prekey, OPKO);
+            byte[] concated = concat(concat(concat(dh1.getEncoded(), dh2.getEncoded()), dh3.getEncoded()), dh4.getEncoded());
+            Key secret = KDF(concated);
+        }
+        else
+        {
+            byte[] concated = concat(concat(dh1.getEncoded(), dh2.getEncoded()), dh3.getEncoded());
+            Key secret = KDF(concated);
+        }
+    }
 
+    public Key KDF(byte[] seq){
+        Key k = null;
+        //32 byte output from HKDF with inputs:
+        //input key material is F || seq where f id bte seq containing
+        //32 0xFF bytes
+        //salt is zero filled byte sequence equal to hash output length
+        //info = "KDF for X3DH"
+        return k;
+    }
+//Alice verifies the prekey signature and aborts the protocol if verification fails.
+// Alice then generates an ephemeral key pair with public key EKA.
+//After calculating SK, Alice deletes her ephemeral private key and the DH outputs.
+//Alice then calculates an "associated data" byte sequence AD that contains identity
+// information for both parties:
+//    AD = Encode(IKA) || Encode(IKB)
+    //Alice then sends Bob an initial message containing: Alice's identity key IKA,
+    //Alice's ephemeral key EKA, Identifiers stating which of Bob's prekeys Alice used,
+    //An initial ciphertext encrypted with some AEAD encryption scheme [4] using AD
+// as associated data and using an encryption key which is either SK or the output
+// from some cryptographic PRF keyed by SK.
+
+    //The initial ciphertext is typically the first message in some post-X3DH
+    // communication protocol. In other words, this ciphertext typically has two
+    // roles, serving as the first message within some post-X3DH protocol, and as
+    // part of Alice's X3DH initial message.
+    public byte[] sig(KeyPair pair, byte[] message){
+        byte[] bytes = null;
+        //represents a byte sequence that is an XEdDSA signature on the byte sequence
+        // M and verifies with public key PK, and which was created by signing M with
+        // PK's corresponding private key. The signing and verification functions for
+        // XEdDSA are specified in[2].
+        return bytes;
+    }
     public KeyBundle getUsersKeyBundle(String otherUserID, String currentUserID){
         KeyBundle bundle = new KeyBundle();
         //get bundle form key distribution center
-
+        Key IKO;
+        Key SPKO;
+        Key signedPrekeyO;
+        Key OPKO;
         return bundle;
     }
     public KeyPair generate_DH(){
@@ -90,61 +187,7 @@ public class KeyAgreement {
          //return bytes;
          return a;
      }
-     //dont need this one, have kdf-rk-he
-    //do need kdf_ck though
-     public Pair<Key, Key> KDF_RK(Key root, Key output){
-        Pair<Key, Key> k = null;
-        byte[] rootK = root.getEncoded();
-        byte[] outputMaterial;
-        try{
-            Mac mac = Mac.getInstance("SHA256");//change
-            byte[] salt = root.getEncoded();
-            byte[] info;
-            String s = "info for HKDF with Root Key";
-            info = s.getBytes(Charset.forName("UTF-8"));
-            byte[] outputKey = output.getEncoded();
-            HKDFParameters params = new HKDFParameters(outputKey, salt, info);
-            HKDFBytesGenerator hkdf = new HKDFBytesGenerator(new SHA256Digest());
-            hkdf.init(params);
-            byte[] result = new byte[64];
-            hkdf.generateBytes(result, 0,64);
-            byte[] rootKeyResult = new byte[32];
-            byte[] chainKeyResult = new byte[32];
-            System.arraycopy(result, 0, rootKeyResult, 0, rootKeyResult.length);
-            System.arraycopy(result, 0, chainKeyResult, 0, chainKeyResult.length);
-            //Key chain = ;
-        }catch(GeneralSecurityException e){
 
-        }
-
-        //regular pair not keypair because pair can do two arrays of bytes
-        //(32 root key, 32 chain key);
-         //and SHA-256
-         //output of applying KDF keyed by a 32 byte root key to a DH output
-         //HKDF withh root as salt, output as input key material, and application specific
-         //byte sequence as HKDF info. Info should be distinct from others uses of HKDF
-
-         //step 1: extract: PsuedoRandomKey = HMAC-Hash(salt, inputKeyMaterial)
-         //step 2: Expand: OuptuKeyMaterial = {N = ceiling(lengthOfOutputInOctets
-         //divided by HashLen; T = first L octets of T which are T(0) is empty string
-         //and t(1) is HMAC-Hash(PRK, T90) |info | 0x01) and T9@0 is HMAC-Hash(PRK,
-         //T(1) | info | 0x02) and so on up to N
-         //| means concatenated
-         //key.getEncoded() gives byte[] and
-         //looks everything is in bte[] instead of keys
-        return k;
-     }
-//java has Signature object with getInstance
-    //initSign(PrivateKey private) puts it in sign state
-    //initVerify(PubicKey public) puts it in verify state
-    //update(byte[] data) or update(byte[] data, int off, int len) to supply to object
-    //then sign() and returns byte[]
-    //update and verify if in verify state
-    //GCMParameterSpec myParams = new GCMParameterSpec(int myTLen, byte[] myIv);
-    //Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
-    //c.init(Cipher.ENCRYPT_MODE, secretKey, myParams);
-    //MAC class (HMACSha256)
-    //MessageDIgest sha = MessageDIgest.getInstance("SHA-256");
      public Pair<Key, Key> KDF_CK(Key chain){
         Pair<Key, Key> k = null;
         //need to turn string chain key into speicific kind of key like SecretKeySpec
@@ -341,22 +384,6 @@ public class KeyAgreement {
         //AEAD, if authentication fails or headerKey is empty, return NONE
         return header;
      }
-    ///////To implement the DH ratchet, each party generates a DH key pair
-    //(a Diffie-Hellman public key and private key) which becomes their current
-    // ratchet key pair. Every message from either party begins with a header which
-    // contains the sender's current ratchet public key. When a new ratchet public key
-    // is received from the remote party, a DH ratchet step is performed which replaces
-    // the local party's current ratchet key pair with a new key pair.
-    ////////The DH outputs generated during each DH ratchet step are used to derive new
-    //sending and receiving chain keys. The below revisits Bob's first ratchet
-    //step. Bob uses his first DH output to derive a receiving chain that matches
-    //Alice's sending chain. Bob uses the second DH output to derive a new sending chain
-    //o a full DH ratchet step consists of updating the root KDF chain twice, and using
-    // the KDF output keys as new receiving and sending chain keys
-    //When a message is sent or received, a symmetric-key ratchet step is applied to
-    //the sending or receiving chain to derive the message key.
-    //When a new ratchet public key is received, a DH ratchet step is performed prior
-    //to the symmetric-key ratchet to replace the chain keys.
     //To allow Bob and ALice to send messages immediately after initialization Bob's
     // sending chain key and Alice's receiving chain key could be initialized to a
     // shared secret.
