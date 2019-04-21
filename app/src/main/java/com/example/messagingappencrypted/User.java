@@ -212,6 +212,19 @@ public class User {
         };
 
     }
+
+    public String encrypt(State state, String message, String data){
+        Pair<Header, byte[]> p = k.ratchetEncrypt(state, message, data.getBytes());//what is data?? random?
+        String ciphertext = p.second.toString();
+        return ciphertext;
+    }
+
+    public String decrypt(State state, String message, String data){
+        //state, header ib bytes, message in bytes, abd data in bytes
+        //
+        byte[] header = null;//get from message, first 40 i think??
+        k.ratchetDecrypt(state, header, message.getBytes(), data.getBytes());
+    }
     //initialize using updateUserForRatchet#, after secret key is is agreed on
     //Alice's first message encrypted using ratchetEncrypt(state, string text, byte[])
     //and sent to bob

@@ -32,12 +32,8 @@ import javax.crypto.spec.SecretKeySpec;
 import co.chatsdk.core.types.KeyValue;
 
 public class KeyAgreement {
-    int max_skip = 5;//what is good max skip amount??
-    //byte[] info = new byte[16];
+    int max_skip = 7;//what is good max skip amount??
 
-    /*static {
-        Security.insertProviderAt(new org.spongycastle.jce.provider.BouncyCastleProvider(), 1);
-    }*/
     public KeyAgreement(){
 
     }
@@ -261,9 +257,9 @@ public class KeyAgreement {
 
      public byte[] header(KeyPair dhPair, int chainLength, int messageNumber){
         byte[] bytes = new byte[40];
-        byte[] n = new byte[4];
-        byte[] pmic = new byte[4];
-        byte[] dh = new byte[32];
+        byte[] n;
+        byte[] pmic;
+        byte[] dh;
         n = ByteBuffer.allocate(4).putInt(messageNumber).array();
         pmic = ByteBuffer.allocate(4).putInt(chainLength).array();
         dh = dhPair.getPublic().getEncoded();
@@ -424,7 +420,7 @@ public class KeyAgreement {
     //TO retrieve data, use Query q =...
     public Pair ratchetEncrypt(State state, String plainText, byte[] associatedData){
         Key messageKey;
-        Pair<Header, Key> k;//header key or string? byte[]??
+        Pair<Header, byte[]> k;//header key or string? byte[]??
         Pair<Key, Key> pair = KDF_CK(state.chainKeyReceiving);
         state.chainKeyReceiving = pair.second;
         messageKey = pair.first;

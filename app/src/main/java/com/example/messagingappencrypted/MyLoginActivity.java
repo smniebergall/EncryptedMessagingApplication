@@ -219,16 +219,6 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
         }catch(NoSuchAlgorithmException e){
             //handle exception
         }
-        //byte[] publicKey = pair.getPublic().getEncoded();
-        //B is Base Point, I identoty point, p field prime, q order of base
-        //point, c cofactor, d edwards curve constant, A mongomnery
-        //curve constant, n nonsquare integer modulo integer, |p| ceil(log2(p)),
-        //|q| ceil(log2(q)), b 8*(ceil((|p| +1)/8)
-        //on_curve(Point P) returns if P satisfies equation
-        //mongomery curve equation for points(u,v)= v^2 = u(u^2 +Au +1)(mod p)
-        //elligator2(int r){ u1 = -A * inversion(1 +nr^2)(mod p);
-        //w1 = u1(u1^2 +Au1 +1) (mod p); if w1^(p-1)/2 == -1 {
-        //u2 = -A -u1 (mod p); return u2;} return u1;}
     }
 
     @Override
@@ -279,6 +269,63 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
         this.exitOnBack = exitOnBack;
      }
 
+     public void TryActualEncryptionDecryption(){
+        try{
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("X25519");//does this actally work
+            generator.initialize(256);//what size??
+            //do i need to worry about 33 byte EC key to 32 byte key??
+            KeyPair pair1 = generator.generateKeyPair();
+            Key priv1 = pair1.getPrivate();
+            Key pub1 = pair1.getPublic();
+            List<KeyPair> realPrekeys1 = new ArrayList<KeyPair>();
+            for(int i = 0; i < 10; i++){
+                realPrekeys1.add(generator.generateKeyPair());
+            }
+            List<Key> prekeys1 = new ArrayList<Key>();
+            for(int i = 0; i < realPrekeys1.size();i++){
+                prekeys1.add(realPrekeys1.get(i).getPublic());
+            }
+            KeyPair actualPrekey1 = generator.generateKeyPair();
+            Key prekey1 = actualPrekey1.getPublic();
+            String ID = ChatSDK.currentUserID();
+            KeyBundle bundle1 = new KeyBundle(priv1, prekey1, prekeys1);
+            ActualKeyBundle realBundle1 = new ActualKeyBundle(ID, pair1, actualPrekey1, realPrekeys1);
+
+            KeyPair pair2 = generator.generateKeyPair();
+            Key priv2 = pair1.getPrivate();
+            Key pub2 = pair1.getPublic();
+            List<KeyPair> realPrekeys2 = new ArrayList<KeyPair>();
+            for(int i = 0; i < 10; i++){
+                realPrekeys2.add(generator.generateKeyPair());
+            }
+            List<Key> prekeys2 = new ArrayList<Key>();
+            for(int i = 0; i < realPrekeys1.size();i++){
+                prekeys2.add(realPrekeys1.get(i).getPublic());
+            }
+            KeyPair actualPrekey2 = generator.generateKeyPair();
+            Key prekey2 = actualPrekey2.getPublic();
+            String ID2 = ChatSDK.currentUserID();
+            KeyBundle bundle2 = new KeyBundle(priv2, prekey2, prekeys2);
+            ActualKeyBundle realBundle2 = new ActualKeyBundle(ID2, pair2, actualPrekey2, realPrekeys2);
+
+            State state1 = new State();
+            State state2 = new State();
+            User one = new User(ID);
+            User two = new User(ID2);
+            //key agreement protocol here!!
+            KeyPair secret = new Key();
+
+            one.updateUserForRatchetStart(state1, Key secret, Key pub, Key sharedHeaderKeySelf, Key sharedNextHeaderOther);
+            two.updateUserFOrRatchetSecond(state2, Key secret, KeyPair priv, Key sharedHeaderKeyOther, Key nextHeaderSelf);
+
+            String message1 = "Hello World!";
+            String message2 = "World says hello!";
+
+        }catch(GeneralSecurityException e){
+
+        }
+
+     }
      /*protected Point convertMont(int u){
         Point p;
         //u_masked = u(mod 2^|p|)
