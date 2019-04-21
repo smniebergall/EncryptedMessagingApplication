@@ -23,6 +23,7 @@ import android.graphics.Point;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -35,7 +36,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
-import org.apache.commons.lang3.StringUtils;
+//import org.apache.commons.lang3.StringUtils;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -243,7 +244,8 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
 
     public void toastErrorMessage(Throwable error, boolean login){
         String errorMessage = "";
-        if(StringUtils.isNotBlank(error.getMessage())){
+        //StringUtils.isNotBlank(error.getMessage())
+        if(!TextUtils.isEmpty(error.getMessage())){//is this okay??
             errorMessage = error.getMessage();
         }
         else if(login){

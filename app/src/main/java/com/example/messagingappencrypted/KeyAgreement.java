@@ -4,12 +4,15 @@ import android.security.keystore.KeyGenParameterSpec;
 import android.util.Pair;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.Signature;
 import java.security.*;
+import java.security.spec.KeySpec;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -65,7 +68,7 @@ public class KeyAgreement {
     public KeyPair generate_DH(){
         KeyPair k = null;
         try{
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("X25519", "SC");
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("X25519");
             k = generator.generateKeyPair();
             //java says this exists, android developers says it doesn't?
             //share key with server (String)(Base65.encode(pubKeu.encoded, 0)) maybe?
@@ -91,7 +94,8 @@ public class KeyAgreement {
          //return bytes;
          return a;
      }
-
+     //dont need this one, have kdf-rk-he
+    //do need kdf_ck though
      public Pair<Key, Key> KDF_RK(Key root, Key output){
         Pair<Key, Key> k = null;
         byte[] rootK = root.getEncoded();
@@ -112,14 +116,10 @@ public class KeyAgreement {
             byte[] chainKeyResult = new byte[32];
             System.arraycopy(result, 0, rootKeyResult, 0, rootKeyResult.length);
             System.arraycopy(result, 0, chainKeyResult, 0, chainKeyResult.length);
-            Key chain =
+            //Key chain = ;
         }catch(GeneralSecurityException e){
 
         }
-
-        //KeyPair cannot do getEncoded because it two keys so probbaly needs to be
-         //byte[] in function itself
-         //so output of diffie hellman is byte[] too??
 
         //regular pair not keypair because pair can do two arrays of bytes
         //(32 root key, 32 chain key);
@@ -161,7 +161,18 @@ public class KeyAgreement {
              //0x01 for message key and 0x02 for next chian key
              Mac HMAC_SHA256 = Mac.getInstance("HmacSHA256");
              HMAC_SHA256.init(chain);
-             //HMAC_SHA256.
+             byte[] messageKey;
+             byte[] nextChainKey;
+             //byte[] bytes = {"0x01"., "0x02"};
+             byte[] one = new byte[1];
+             one[0] = (byte)0x01;
+             byte[] two = new byte[1];
+             two[0] = (byte)0x02;
+             messageKey = HMAC_SHA256.doFinal(one);
+             nextChainKey = HMAC_SHA256.doFinal(two);
+             SecretKey mkey = new SecretKeySpec(messageKey, "AES");
+             SecretKey ckey = new SecretKeySpec(nextChainKey, "AES");
+             k = new Pair(mkey, ckey);
 
          }catch(GeneralSecurityException e){
 
@@ -206,11 +217,9 @@ public class KeyAgreement {
              Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");//change to PCKS7Padding
              //from bouncy castle??
              IvParameterSpec iv = new IvParameterSpec(IV);
-             SecretKeySpec encKey = new SecretKeySpec(encryptionKey, "AES");
+             SecretKeySpec encKey = new SecretKeySpec(encryptionKey, "HMAC_SHA256");
              SecretKeySpec aKey = new SecretKeySpec(authKey, "HMAC_SHA256");//Is this right??
              cipher.init(Cipher.ENCRYPT_MODE, encKey, iv);
-             //aKey may need to be AES also, since it's 32-byte
-             //but any sha256 is 32 byte
              byte[] encrypted = cipher.doFinal(plainText);
              Mac mac = Mac.getInstance("HmacSHA256");
              mac.init(aKey);
@@ -251,7 +260,24 @@ public class KeyAgreement {
      }
 
      public byte[] header(KeyPair dhPair, int chainLength, int messageNumber){
-        byte[] bytes = null;
+        byte[] bytes = new byte[40];
+        byte[] n = new byte[4];
+        byte[] pmic = new byte[4];
+        byte[] dh = new byte[32];
+        n = ByteBuffer.allocate(4).putInt(messageNumber).array();
+        pmic = ByteBuffer.allocate(4).putInt(chainLength).array();
+        dh = dhPair.getPublic().getEncoded();
+        for(int i = 0; i < bytes.length; i++){
+            if(i < 4){
+                bytes[i] = n[i];
+            }
+            else if(i < 8){
+                bytes[i] = pmic[i];
+            }
+            else {
+                bytes[i] = dh[i];
+            }
+        }
         //yes use public key
          //edDSA based on shnorr
         //create new message header containing DH ratchet public key from the key pair
@@ -294,9 +320,25 @@ public class KeyAgreement {
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, headerKey, IV);
             bytes = cipher.doFinal(plaintext);
-            //now turn bytes into a header object
-            //need dh public key and number of messages in previous chain and n
-            //n = message number
+            //first 4 bytes are integer n
+            //next 4 bytes is number of messages in previous chain
+            //and next 32 bytes are the key
+            byte[] n = new byte[4];
+            byte[] pmic = new byte[4];
+            byte[] k = new byte[32];
+            for(int i = 0; i < bytes.length; i++){
+                if(i < 4){
+                    n[i] = bytes[i];
+                }
+                else if(i < 8){
+                    pmic[i] = bytes[i];
+                }
+                else{
+                    k[i] = bytes[i];
+                }
+            }
+            SecretKey dh = new SecretKeySpec(k, "AES");
+            header.updateHedaer(new BigInteger(n).intValue(), new BigInteger(pmic).intValue(), dh);
         }catch(GeneralSecurityException e){
 
         }
@@ -329,9 +371,29 @@ public class KeyAgreement {
          //probbaly still EC DH key??
          Pair<Pair<Key, Key>, Key> keys = null;
          try{
-             KeyFactory kf = KeyFactory.getInstance("EC");
+             byte[] info;
+             String s = "HKDF for lots of keys";
+             info = s.getBytes(Charset.forName("UTF-8"));
+             HKDFParameters params = new HKDFParameters(root.getEncoded(), output.getEncoded(), info);
+             HKDFBytesGenerator hkdf = new HKDFBytesGenerator(new SHA256Digest());
+             hkdf.init(params);
+             byte[] result = new byte[86];
+             hkdf.generateBytes(result, 0,86);
+             //does this create one key? multiple keys??
+             byte[] rootKeyResult = new byte[32];
+             byte[] chainKeyResult = new byte[32];
+             byte[] nextHeaderKey = new byte[32];
+             System.arraycopy(result, 0, rootKeyResult, 0, rootKeyResult.length);
+             System.arraycopy(result, rootKeyResult.length, chainKeyResult, 0, chainKeyResult.length);
+             System.arraycopy(result, chainKeyResult.length, nextHeaderKey, 0, nextHeaderKey.length);
+             KeyFactory kf = KeyFactory.getInstance("EC");//may not need this
+             SecretKey rkey = new SecretKeySpec(rootKeyResult,  "AES");//AES is 32-byte i think
+             SecretKey ckey = new SecretKeySpec(chainKeyResult,  "AES");
+             SecretKey nkey = new SecretKeySpec(nextHeaderKey, "AES");
+             keys = new Pair(new Pair(rkey, ckey), nkey);
              //how to change from byte[] to Key
              //what type of Key??
+             //256 bits key is 32-byte array
          }catch(GeneralSecurityException e){
 
          }
@@ -339,8 +401,7 @@ public class KeyAgreement {
          return keys;
      }
      public byte[] concat(byte[] seq, byte[] header){
-        //byte[] headerbytes = header.getBytes();
-         byte[] s = new byte[header.length+seq.length];
+        byte[] s = new byte[header.length+seq.length];
         for(int i = 0; i < seq.length; i++){
             s[i] = seq[i];
         }
@@ -362,11 +423,11 @@ public class KeyAgreement {
     //Log.w(TAG, "loadPost:onCancelled", databaseError.toException());}
     //TO retrieve data, use Query q =...
     public Pair ratchetEncrypt(State state, String plainText, byte[] associatedData){
-        Key messageKey = null;
-        Pair<Header, Key> k = null;//header key or string? byte[]??
+        Key messageKey;
+        Pair<Header, Key> k;//header key or string? byte[]??
         Pair<Key, Key> pair = KDF_CK(state.chainKeyReceiving);
-        state.chainKeyReceiving = pair.first;
-        messageKey = pair.second;
+        state.chainKeyReceiving = pair.second;
+        messageKey = pair.first;
         byte[] bytesPlainText = plainText.getBytes(Charset.forName("UTF-8"));
         byte[] header = header(state.sendingKey, state.numberOfMessagesInChain, state.messageNumberSent);
         byte[] encryptedHeader = hencrypt(state.nextHeaderSending, header);
@@ -376,29 +437,29 @@ public class KeyAgreement {
     }
 
     public byte[] ratchetDecrypt(State state, byte[] h, byte[] cipherText, byte[] associated){
-        Header header =  new Header();
+        Header header;
         byte[] plainText = TrySkippedMessageKeys(state, h, cipherText, associated);
         if(plainText != null){
             return plainText;
         }
         Pair<Header, Boolean> p = decryptHeader(state, h);
+        header = p.first;
         if(p.second){
             SkipMessageKeys(state, header.numberOfMessagesInPreviousChain);
             DHRatchet(state, header);
         }
         SkipMessageKeys(state, header.n);
         Pair<Key, Key> pair = KDF_CK(state.chainKeyReceiving);
-        state.chainKeyReceiving = pair.first;
-        Key messageKey = pair.second;
+        state.chainKeyReceiving = pair.second;
+        Key messageKey = pair.first;
         state.messageNumberReceived++;
-        //byte[] encrypted_= header(KeyPair dhPair, int chainLength, int messageNumber);
         return decrypt(messageKey, cipherText, concat(associated, h));
     }
 
     public byte[] TrySkippedMessageKeys(State state, byte[] h, byte[] cipherText, byte[] AD){
-        Header header = new Header();
-        Key messageKey = null;
-        Iterator<Pair<Key,Integer>> itr = state.skippedMessages.keySet().iterator();
+        Header header;
+        Key messageKey;
+        //Iterator<Pair<Key,Integer>> itr = state.skippedMessages.keySet().iterator();
         for(Iterator<Map.Entry<Pair<Key, Integer>, Key>> entries = state.skippedMessages.entrySet().iterator(); entries.hasNext();){
             Map.Entry<Pair<Key, Integer>, Key> entry = entries.next();
             header = hdecrypt(entry.getKey().first, h);
@@ -412,7 +473,7 @@ public class KeyAgreement {
     }
 
     public Pair<Header, Boolean> decryptHeader(State state, byte[] encryptedHeader){
-        Pair<Header, Boolean> p = null;
+        Pair<Header, Boolean> p;
         Header header = hdecrypt(state.headerReceiving, encryptedHeader);
         if(header != null){
             p = new Pair(header, false);
@@ -449,7 +510,7 @@ public class KeyAgreement {
             state.headerSending = state.nextHeaderSending;
             state.headerReceiving = state.nextHeaderReceiving;
             state.receivingKey = header.dh;
-            Pair<Pair<Key, Key>, Key> pair = null;
+            Pair<Pair<Key, Key>, Key> pair;
             pair = kdf_rk_he(state, state.rootKey, DH(state.sendingKey, state.receivingKey));
             state.rootKey = pair.first.first;
             state.chainKeyReceiving = pair.first.second;
@@ -469,15 +530,15 @@ public class KeyAgreement {
 
 
     //TO DO
-    //add spongy castle
     //finish X3DH signatures with elliptic curves
     //put into actual messages to display
     //chack with hard coding that encryption and decryption work
-    //finish KDF functions
     //add errors where appropraite
     //finish look of login and any other activity
     //get rid of spongy castle, only need bouncy castle
-    //change spongy castle provider in code to none
     //fix for loops
     //java starts at 0 so need length-1
+    //do decrypting and encrypting of header
+    //get keys to and from firebase
+    //connect to messaging part
 }

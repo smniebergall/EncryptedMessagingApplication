@@ -12,7 +12,9 @@ public class Header {
 
     }
 
-    public void updateHedaer(){
-
+    public void updateHedaer(int n, int pmic, Key k){
+        this.n = n;
+        this.numberOfMessagesInPreviousChain = pmic;
+        this.dh = k;
     }
 }
