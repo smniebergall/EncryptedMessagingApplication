@@ -313,14 +313,22 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             User one = new User(ID);
             User two = new User(ID2);
             //key agreement protocol here!!
-            KeyPair secret = new Key();
-
-            one.updateUserForRatchetStart(state1, Key secret, Key pub, Key sharedHeaderKeySelf, Key sharedNextHeaderOther);
-            two.updateUserFOrRatchetSecond(state2, Key secret, KeyPair priv, Key sharedHeaderKeyOther, Key nextHeaderSelf);
+            Key secret = null;
+            Key pub = null;
+            KeyPair priv = null;
+            Key sharedHeaderKeySelf = null;
+            Key sharedNextHeaderOther = null;
+            Key sharedHeaderKeyOther = null;
+            Key nextHeaderSelf = null;
+            one.updateUserForRatchetStart(state1, secret, pub, sharedHeaderKeySelf, sharedNextHeaderOther);
+            two.updateUserFOrRatchetSecond(state2, secret, priv, sharedHeaderKeyOther, nextHeaderSelf);
 
             String message1 = "Hello World!";
             String message2 = "World says hello!";
-
+            String encryptedMessage1 = one.encrypt(state1, message1, "");
+            String encryptedMessage2 = two.encrypt(state2, message2, "");
+            String decryptedMessage1 = two.decrypt(state2, encryptedMessage1, "");
+            String decryptedMessage2 = one.decrypt(state1, encryptedMessage2, "");
         }catch(GeneralSecurityException e){
 
         }

@@ -455,7 +455,6 @@ public class KeyAgreement {
     public byte[] TrySkippedMessageKeys(State state, byte[] h, byte[] cipherText, byte[] AD){
         Header header;
         Key messageKey;
-        //Iterator<Pair<Key,Integer>> itr = state.skippedMessages.keySet().iterator();
         for(Iterator<Map.Entry<Pair<Key, Integer>, Key>> entries = state.skippedMessages.entrySet().iterator(); entries.hasNext();){
             Map.Entry<Pair<Key, Integer>, Key> entry = entries.next();
             header = hdecrypt(entry.getKey().first, h);

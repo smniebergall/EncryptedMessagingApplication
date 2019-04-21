@@ -223,7 +223,18 @@ public class User {
         //state, header ib bytes, message in bytes, abd data in bytes
         //
         byte[] header = null;//get from message, first 40 i think??
-        k.ratchetDecrypt(state, header, message.getBytes(), data.getBytes());
+        byte[] messageText = message.getBytes();
+        byte[] actualMessage = null;
+        for(int i =0; i < messageText.length; i++){
+            if(i < 40){
+                header[i] = messageText[i];
+            }
+            else{
+                actualMessage[i] = messageText[i];
+            }
+        }
+        byte[] plain = k.ratchetDecrypt(state, header, actualMessage, data.getBytes());
+        return  plain.toString();
     }
     //initialize using updateUserForRatchet#, after secret key is is agreed on
     //Alice's first message encrypted using ratchetEncrypt(state, string text, byte[])
