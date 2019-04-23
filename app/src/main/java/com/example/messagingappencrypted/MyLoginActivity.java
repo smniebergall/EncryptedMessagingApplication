@@ -313,13 +313,17 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             User one = new User(ID);
             User two = new User(ID2);
             //key agreement protocol here!!
-            Key secret = null;
-            Key pub = null;
+            Key secret = one.calculateSecretKey(bundle2.identity, bundle2.prekey, bundle2.signature, bundle2.);
+            //need to change bundle to have signed prekey, signature of signed prekey
+            //and one time prekey
+            //User user, Key IKO, Key SPKO, Key signedPrekeyO, Key OPKO
+            Key pub = bundle2.identity;
             KeyPair priv = null;
-            Key sharedHeaderKeySelf = null;
-            Key sharedNextHeaderOther = null;
-            Key sharedHeaderKeyOther = null;
-            Key nextHeaderSelf = null;
+            Key sharedHeaderKeySelf = one.findState(state1).;
+            Key sharedNextHeaderOther = two.findState(state2).;
+            Key sharedHeaderKeyOther = null;//this and sharedHeader above must be same
+            Key nextHeaderSelf = null;//this and sharedNext above must be same
+
             one.updateUserForRatchetStart(state1, secret, pub, sharedHeaderKeySelf, sharedNextHeaderOther);
             two.updateUserFOrRatchetSecond(state2, secret, priv, sharedHeaderKeyOther, nextHeaderSelf);
 
@@ -334,13 +338,5 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
         }
 
      }
-     /*protected Point convertMont(int u){
-        Point p;
-        //u_masked = u(mod 2^|p|)
-         //P.y = u_to_y(u_masked)
-         //P.s = 0
-         //return P
-        return p;
-     }*/
 
 }

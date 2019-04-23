@@ -102,29 +102,56 @@ public class KeyAgreement {
         //dh function for specifically X3DH??
         //elliptic curve diffie-hellman
         //says
+
+        Key secret;
         Key dh3 = DH(user.actualBundle.prekey, SPKO);
         //maybe not current users prekey, make a new ephemeral key for this
         if(OPKO != null){
             Key dh4 = DH(user.actualBundle.prekey, OPKO);
             byte[] concated = concat(concat(concat(dh1.getEncoded(), dh2.getEncoded()), dh3.getEncoded()), dh4.getEncoded());
-            Key secret = KDF(concated);
+            secret = KDF(concated);
         }
         else
         {
             byte[] concated = concat(concat(dh1.getEncoded(), dh2.getEncoded()), dh3.getEncoded());
-            Key secret = KDF(concated);
+            secret = KDF(concated);
         }
+
+        return secret;
     }
 
     public Key KDF(byte[] seq){
-        Key k = null;
+        byte[] result = new byte[32];
         //32 byte output from HKDF with inputs:
         //input key material is F || seq where f id bte seq containing
         //32 0xFF bytes
+        byte[] bytes = new byte[32];
+        byte[] input = new byte[bytes.length+seq.length];
+        for(int i = 0; i < bytes.length; i++){
+            bytes[i] = (byte)0xFF;
+        }
+        input = concat(bytes, seq);
+        byte[] salt = new byte[32];//hash output length?? I think 32 because binary
+        String infoString = "Info for KDF for key agreement";
+        byte[] info = infoString.getBytes();
+        HKDFParameters params = new HKDFParameters(input, salt, info);
+        HKDFBytesGenerator hkdf = new HKDFBytesGenerator(new SHA256Digest());
+        hkdf.init(params);
+        hkdf.generateBytes(result, 0,32);
+
+        //change any loops with sequences to concat,
+        //and probably change concat itself
+
         //salt is zero filled byte sequence equal to hash output length
         //info = "KDF for X3DH"
+        SecretKey k = new SecretKeySpec(result, "AES");
         return k;
     }
+
+    //probbaly only need to do new type of conversation not new type of message
+    //should I do immediate decrypt on receiving message or have button
+    //button seems like a good idea
+
 //Alice verifies the prekey signature and aborts the protocol if verification fails.
 // Alice then generates an ephemeral key pair with public key EKA.
 //After calculating SK, Alice deletes her ephemeral private key and the DH outputs.
@@ -563,4 +590,6 @@ public class KeyAgreement {
     //do decrypting and encrypting of header
     //get keys to and from firebase
     //connect to messaging part
+    //fix concat and change anything other loops to concat
+    //finish  XEDDSA and VXEDDSA signature schemes
 }

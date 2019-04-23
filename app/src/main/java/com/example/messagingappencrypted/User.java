@@ -20,6 +20,7 @@ public class User {
     String userID;
     ActualKeyBundle actualBundle;
     KeyAgreement k;
+    Key ephemeral;
     List<State> states;
    // private Key ;
 
@@ -38,11 +39,15 @@ public class User {
     public void updateKeyBundle(ActualKeyBundle bundle){
         this.actualBundle = bundle;
     }
+    public State findState(State state){
 
+        return states.get(states.indexOf(state));
+    }
     public void updateRootAndChainKeys(State state, Key root, Key chain){
         state.rootKey = root;
         state.chainKeyReceiving = chain;//right chain key??
     }
+
     //Only if from alice to send message to bob, and doesn't know
     public void updateUserForRatchetStart(State state, Key secret, Key pub, Key sharedHeaderKeySelf, Key sharedNextHeaderOther){
         k = new KeyAgreement();
@@ -235,6 +240,11 @@ public class User {
         }
         byte[] plain = k.ratchetDecrypt(state, header, actualMessage, data.getBytes());
         return  plain.toString();
+    }
+
+    public Key calculateSecretKey(Key IdentityOtherPub, Key SignedPreKeyOtherPub, Key signatureOfPreKeyOtherPub, Key oneTimePreKeyOtherpub){
+        Key secret = k.calculateSecretKey(this, IdentityOtherPub, SignedPreKeyOtherPub, signatureOfPreKeyOtherPub, oneTimePreKeyOtherpub);
+        return secret;
     }
     //initialize using updateUserForRatchet#, after secret key is is agreed on
     //Alice's first message encrypted using ratchetEncrypt(state, string text, byte[])
