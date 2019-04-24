@@ -183,6 +183,7 @@ public class KeyAgreement {
         Key SPKO;
         Key signedPrekeyO;
         Key OPKO;
+        //only use 1 one-time prekey and delete it from firebase
         return bundle;
     }
     public KeyPair generate_DH(){

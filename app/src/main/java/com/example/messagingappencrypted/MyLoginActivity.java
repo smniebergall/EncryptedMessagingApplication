@@ -14,7 +14,6 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
 import timber.log.Timber;
-
 import android.app.Notification;
 import android.content.Context;
 import android.content.Intent;
@@ -38,6 +37,12 @@ import com.google.firebase.database.FirebaseDatabase;
 
 //import org.apache.commons.lang3.StringUtils;
 
+import org.spongycastle.jce.ECNamedCurveTable;
+import org.spongycastle.math.ec.ECCurve;
+import org.spongycastle.math.ec.ECFieldElement;
+import org.spongycastle.math.ec.ECPoint;
+
+import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -324,8 +329,26 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             Key sharedHeaderKeyOther = null;//this and sharedHeader above must be same
             Key nextHeaderSelf = null;//this and sharedNext above must be same
 
+
             one.updateUserForRatchetStart(state1, secret, pub, sharedHeaderKeySelf, sharedNextHeaderOther);
             two.updateUserFOrRatchetSecond(state2, secret, priv, sharedHeaderKeyOther, nextHeaderSelf);
+            //Okay so get key bundle, A verifies prekey signature and generates
+            //ephemeral key pair EKA if it if works, then do calculate secret key,
+            //after, A deletes ephemeral private key, calculates associated data
+            //which is AD = encoded(IKA) concated to encode(IKB)
+            //A sends messages containing IKA, EKA, identifiers saying which of B's prekeys
+            //used, and initial ciphertext encrypted using AEAD
+            //so 32, 32, how many for prekeys, and whatevers left is ciphertext
+
+            //When B gets message, B gets the two keys from message and loads B's
+            //identity private key, and private keys correpsodnign to signed prekey and one
+            //time prekey A used
+            //Using these, B repeats DH and KDF calculations from previous section
+            //to derive SK and deletes DH values
+            //B then does the AD sequence again
+            //finally B decrypts ciphertext using SK and AD. If fails, abort protocol
+            //If it does decrypt correctly, then B deletes one-time prekey pruvate key, then everyone
+            //can continue using SK to send messages
 
             String message1 = "Hello World!";
             String message2 = "World says hello!";
@@ -333,10 +356,89 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             String encryptedMessage2 = two.encrypt(state2, message2, "");
             String decryptedMessage1 = two.decrypt(state2, encryptedMessage1, "");
             String decryptedMessage2 = one.decrypt(state1, encryptedMessage2, "");
+            Log.i("MESSAGE1PLAIN", "Message1 plain: " + message1);
+            Log.i("MESSAGE2PLAIN", "Message2 plain: " + message2);
+            Log.i("MESSAGE1ENCRYPTED", "Encrypted message1: " + encryptedMessage1);
+            Log.i("MESSAGE2ENCRYPTED", "Encrypted message2: " + encryptedMessage2);
+            Log.i("MESSAGE1DECRYPTED", "Decrypted message1: " + decryptedMessage1);
+            Log.i("MESSAGE2DECRYPTED", "Decrypted message2: " + encryptedMessage2);
         }catch(GeneralSecurityException e){
 
         }
+        //KeyFactory factory = KeyFactory.getInstance("EdDSA");
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("ECDSA");
+        generator.initialize(ECNamedCurveTable.getParameterSpec("P-256"));//is this right??
+         KeyPair pair = generator.generateKeyPair();
+
+         ECCurve curve = new ECCurve() {
+             @Override
+             public int getFieldSize() {
+                 return 0;
+             }
+
+             @Override
+             public ECFieldElement fromBigInteger(BigInteger x) {
+                 return null;
+             }
+
+             @Override
+             public boolean isValidFieldElement(BigInteger x) {
+                 return false;
+             }
+
+             @Override
+             protected ECCurve cloneCurve() {
+                 return null;
+             }
+
+             @Override
+             protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, boolean withCompression) {
+                 return null;
+             }
+
+             @Override
+             protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression) {
+                 return null;
+             }
+
+             @Override
+             public ECPoint getInfinity() {
+                 return null;
+             }
+
+             @Override
+             protected ECPoint decompressPoint(int yTilde, BigInteger X1) {
+                 return null;
+             }
+         }
+         //Signature s = Signature.getInstance("SHA256withECDSA");//bouncy castle
+         //s.initSign(pair.getPrivate());
+         //s.update(plaintext.getBytes());//update does what??
+         //s.sign();//byte outBuf, int offset, int len, puts signature in outbuf, or juts
+         //normal sign
+         //update updates data to be signed or verified
+         //verify(byte[] signature) or with offset snd len
+         //Signature verify = Signature.getInstance("SHA256withECDSA");
+         //verify.initVerify(pair.getPublic());
+         //verify.update(plaintext.getBytes());
+         //boolean result = verify.verify(signature);
+
 
      }
+
+     //create and verify EdDSA-signatures!!!! XEdDSA signature scheme
+    //Ellipctic curve uses montogmery ladder but need twisted edwards
+    //XEdDSA signing and verifying requires k (mongomery private key)
+    //M (message to sgn(byte seq)), Z (64 bytes of secure random data)
+    //output is siganture (R||s) of byte seq of length 2b where R encodes
+    //a point and s encodes an integer modulo q
+    //SHA-512 used, need hash function that applies hash to input,
+    //and returns integer which is output of the hash parsed in little-endian
+    //xeddsa_sign(k, M, Z){ Pair<A,a> = calculateKeyPair(k); r = hash(a||M||Z)(mod q)
+    //R = rB; h = hash(R||A||M)(mod q); s = r + ha(mod q); return R || s;}
+    //xeddsa_verify(u, M, (R||s)){ if u >= p or R.y >= 2^|p| or s >= 2^|q|{ return false}
+    //A = convert_mont(u); if not on_curve(A) then return false; h = hash(R||A||M)(mod q);
+    //R(check) = sB - hA; if bytes_equal(R, R(check)) then return true; return false;
+    //
 
 }
