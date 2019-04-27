@@ -2,8 +2,10 @@ package com.example.messagingappencrypted;
 
 import android.util.Pair;
 
+import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Enumeration;
@@ -20,7 +22,7 @@ public class User {
     String userID;
     ActualKeyBundle actualBundle;
     KeyAgreement k;
-    Key ephemeral;
+    KeyPair ephemeral = null;
     List<State> states;
    // private Key ;
 
@@ -28,7 +30,22 @@ public class User {
         this.userID = userID;
         states = null;
     }
+    public KeyPair generateNewEphemeral(){
+        KeyPair key = null;
+        try{
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("X25519");
+            key = generator.generateKeyPair();
+        }catch(GeneralSecurityException e){
 
+        }
+        return key;
+    }
+
+    public void deleteEphemeralKey(){
+        ephemeral = null;
+        //put in check for epehemral key being null maybe??
+
+    }
     public void addState(State state){
         states.add(state);
     }

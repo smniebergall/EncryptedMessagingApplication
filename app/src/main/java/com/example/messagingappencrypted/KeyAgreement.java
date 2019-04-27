@@ -38,7 +38,8 @@ public class KeyAgreement {
 
     }
     public byte[] encode(Key pub){
-        return pub.getEncoded();
+        return pub.getEncoded("UTF-16LE");
+        //pub.g
         //The recommended encoding consists of some single-byte constant
         // to represent the type of curve, followed by little-endian encoding
         // of the u-coordinate as specified in [1].
@@ -47,7 +48,7 @@ public class KeyAgreement {
     // from an Elliptic Curve Diffie-Hellman function involving the key pairs
     // represented by public keys PK1 and PK2.
 
-    //ig(PK, M) represents a byte sequence that is an XEdDSA signature on the byte
+    //Sig(PK, M) represents a byte sequence that is an XEdDSA signature on the byte
     // sequence M and verifies with public key PK, and which was created by signing
     // M with PK's corresponding private key. The signing and verification functions
     // for XEdDSA are specified in[2].
@@ -61,13 +62,6 @@ public class KeyAgreement {
     //SPKB bobs signed prekey
     //OPKB bobs one time prekey
     //all keys must be within x25519 for this protocol X3DH
-
-    //KDF(KM) represents 32 bytes of output from the HKDF algorithm [3] with inputs:
-    // HKDF input key material = F || KM, where KM is an input byte sequence containing
-    // secret key material, and F is a byte sequence containing 32 0xFF bytes if curve is X25519,
-    // and 57 0xFF bytes if curve is X448. F is used for cryptographic domain separation with XEdDSA [2].
-    // HKDF salt = A zero-filled byte sequence with length equal to the hash output length.
-    // HKDF info = The info parameter from Section 2.1.
 
     //Each party has a long-term identity public key (IKA for Alice, IKB for Bob).
     //Bob also has a signed prekey SPKB, which he will change periodically, and a
@@ -98,16 +92,13 @@ public class KeyAgreement {
     //A can continue using SK or keys derived from SK to communicate
     public Key calculateSecretKey(User user, Key IKO, Key SPKO, Key signedPrekeyO, Key OPKO){
         Key dh1 = DH(user.actualBundle.identity, signedPrekeyO);
-        Key dh2 = DH(user.actualBundle.prekey, IKO);//do i need diffrent
-        //dh function for specifically X3DH??
-        //elliptic curve diffie-hellman
-        //says
+        Key dh2 = DH(user.ephemeral, IKO);
 
         Key secret;
-        Key dh3 = DH(user.actualBundle.prekey, SPKO);
+        Key dh3 = DH(user.ephemeral, SPKO);
         //maybe not current users prekey, make a new ephemeral key for this
         if(OPKO != null){
-            Key dh4 = DH(user.actualBundle.prekey, OPKO);
+            Key dh4 = DH(user.ephemeral, OPKO);//maybe change ephemeral to actual key bundle??
             byte[] concated = concat(concat(concat(dh1.getEncoded(), dh2.getEncoded()), dh3.getEncoded()), dh4.getEncoded());
             secret = KDF(concated);
         }
@@ -119,7 +110,11 @@ public class KeyAgreement {
 
         return secret;
     }
-
+    public byte[] initialMessage(Key IKA, Key IKB, Key EKA, int[] identifiers, byte[] ciphertext){
+        byte[] bytes = null;
+        bytes = concat(concat(concat(IKA.getEncoded(), EKA.getEncoded()), ByteBuffer.allocate(1).putInt(identifiers[0]).array()), ciphertext);
+        return bytes;
+    }
     public Key KDF(byte[] seq){
         byte[] result = new byte[32];
         //32 byte output from HKDF with inputs:
@@ -170,6 +165,57 @@ public class KeyAgreement {
     // part of Alice's X3DH initial message.
     public byte[] sig(KeyPair pair, byte[] message){
         byte[] bytes = null;
+        //maybe 25519 for signature??
+        try{
+            Signature signature = new Signature("Ed25519") {
+                @Override
+                protected void engineInitVerify(PublicKey publicKey) throws InvalidKeyException {
+
+                }
+
+                @Override
+                protected void engineInitSign(PrivateKey privateKey) throws InvalidKeyException {
+
+                }
+
+                @Override
+                protected void engineUpdate(byte b) throws SignatureException {
+
+                }
+
+                @Override
+                protected void engineUpdate(byte[] b, int off, int len) throws SignatureException {
+
+                }
+
+                @Override
+                protected byte[] engineSign() throws SignatureException {
+                    return new byte[0];
+                }
+
+                @Override
+                protected boolean engineVerify(byte[] sigBytes) throws SignatureException {
+                    return false;
+                }
+
+                @Override
+                protected void engineSetParameter(String param, Object value) throws InvalidParameterException {
+
+                }
+
+                @Override
+                protected Object engineGetParameter(String param) throws InvalidParameterException {
+                    return null;
+                }
+            };
+            signature.initSign(pair.getPrivate());
+            signature.update(message);
+            bytes = signature.sign();
+            //just sign and verify??
+        }catch(GeneralSecurityException e){
+
+        }
+
         //represents a byte sequence that is an XEdDSA signature on the byte sequence
         // M and verifies with public key PK, and which was created by signing M with
         // PK's corresponding private key. The signing and verification functions for
@@ -199,6 +245,7 @@ public class KeyAgreement {
         }
         return k;
     }
+    Rfc8
 
      public Key DH(KeyPair pair, Key pub){
         //DH calculation using pair private key and public
@@ -458,7 +505,7 @@ public class KeyAgreement {
         }
         for(int j = seq.length; j < header.length; j++){
             s[j] = header[j];
-        }
+        }//CHANGE this to different maybe length-i or length-j
         return s;
      }
     //to retrieve info from firebase...
@@ -582,8 +629,9 @@ public class KeyAgreement {
     //TO DO
     //finish X3DH signatures with elliptic curves
     //put into actual messages to display
+    //tests for secret key agreement, firebase publish and get and update keys,
     //chack with hard coding that encryption and decryption work
-    //add errors where appropraite
+    //add errors where appropriate
     //finish look of login and any other activity
     //get rid of spongy castle, only need bouncy castle
     //fix for loops

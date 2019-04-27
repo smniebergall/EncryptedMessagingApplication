@@ -310,15 +310,20 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             KeyPair actualPrekey2 = generator.generateKeyPair();
             Key prekey2 = actualPrekey2.getPublic();
             String ID2 = ChatSDK.currentUserID();
-            KeyBundle bundle2 = new KeyBundle(priv2, prekey2, prekeys2);
+            Key signedPrekey1;
+            Key signedPrekey2;
+            //probbaly need to change actual key bundle to have the same
+            //signed prekey thing
+            KeyBundle bundle2 = new KeyBundle(priv2, prekey2, signedPrekey2, prekeys2);
             ActualKeyBundle realBundle2 = new ActualKeyBundle(ID2, pair2, actualPrekey2, realPrekeys2);
-
             State state1 = new State();
             State state2 = new State();
             User one = new User(ID);
             User two = new User(ID2);
             //key agreement protocol here!!
             Key secret = one.calculateSecretKey(bundle2.identity, bundle2.prekey, bundle2.signature, bundle2.);
+            Key secret2 = two.calculateSecretKey(bundle1.identity, bundle1.prekey, );//make sure these match
+            //both ways is important
             //need to change bundle to have signed prekey, signature of signed prekey
             //and one time prekey
             //User user, Key IKO, Key SPKO, Key signedPrekeyO, Key OPKO
@@ -410,7 +415,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
              protected ECPoint decompressPoint(int yTilde, BigInteger X1) {
                  return null;
              }
-         }
+         };
          //Signature s = Signature.getInstance("SHA256withECDSA");//bouncy castle
          //s.initSign(pair.getPrivate());
          //s.update(plaintext.getBytes());//update does what??
@@ -423,6 +428,8 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
          //verify.update(plaintext.getBytes());
          //boolean result = verify.verify(signature);
 
+         //initial message it 32 bytes IKA, 32 bytes EKA, 4 bytes for int saying which
+         // prekey, and the rest is ciphertext
 
      }
 
