@@ -1,5 +1,6 @@
 package com.example.messagingappencrypted;
 
+import android.util.Log;
 import android.util.Pair;
 
 import java.security.GeneralSecurityException;
@@ -275,7 +276,15 @@ public class User {
     }
 
     public byte[] signPreKey(KeyPair identity, byte[] bytes){
-        byte[] result = k.sig(identity, bytes);
+        //null object reference down 1
+        byte[] result;
+        if(identity == null){
+            Log.i("TRY", "identity is signature is null");
+        }
+        if(bytes == null){
+            Log.i("TRY", "bytes in signature is null");
+        }
+        result = k.sig(identity, bytes);
         return result;
     }
     //initialize using updateUserForRatchet#, after secret key is is agreed on

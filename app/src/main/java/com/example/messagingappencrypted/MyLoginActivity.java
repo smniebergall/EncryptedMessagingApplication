@@ -56,6 +56,7 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.SecretKeySpec;
 
 //change email edit to show fully what youre typing
@@ -84,7 +85,20 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
         if (getSupportActionBar() != null) {
             getSupportActionBar().hide();
         }
-
+        /*Provider[] providers = Security.getProviders();
+        for(Provider provider : providers){
+            boolean printedProvider = false;
+            Set<Provider.Service> services = provider.getServices();
+            for(Provider.Service service : services){
+                String algorithm = service.getAlgorithm();
+                String type = service.getType();
+                if(provider.getName().equalsIgnoreCase("BC"))
+                {
+                    System.out.printf("%n === %s ===%n%n", provider.getName());
+                    System.out.printf("Type: %s alg: %s%n", type, algorithm);
+                }
+            }
+        }*/
     }
 
     protected void initViews() {
@@ -203,7 +217,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
         //identity key is public/private key pair,
         //KeyPairGenerator()
         try {
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("X25519");//does this actally work
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");//does this actally work
             /*generator.initialize(256);//what size??
             //do i need to worry about 33 byte EC key to 32 byte key??
             KeyPair pair = generator.generateKeyPair();
@@ -281,10 +295,10 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
      }
 
      public void TryActualEncryptionDecryption(){
-        Log.i("INTRYENCRYPT", "Before try!!");
+        Log.i("TRY", "Before try!!");
         try{
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("AES");//does this actally work, shuld be 25519
-            Log.i("INTRYENCRYPTACTUALTRY", "IN try!!");
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");//does this actally work, shuld be 25519
+            Log.i("TRY", "IN try!!");
             generator.initialize(256);//what size??
             //do i need to worry about 33 byte EC key to 32 byte key??
             KeyPair pair1 = generator.generateKeyPair();
@@ -300,12 +314,25 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             }
             KeyPair actualPrekey1 = generator.generateKeyPair();
             Key prekey1 = actualPrekey1.getPublic();
-            String ID = ChatSDK.currentUserID();
-            String ID2 = ChatSDK.currentUserID();
+            //String ID = ChatSDK.currentUserID();
+            //String ID2 = ChatSDK.currentUserID();
+            //thinks the above two are still active and not commented out??
+            String ID = "one";
+            String ID2 = "two";
             User one = new User(ID);
             User two = new User(ID2);
-            byte[] signedPrekey1 = one.signPreKey(pair1, prekey1.getEncoded());
-            //should all keys be X25519 or DH for secret key spec????
+            if(pair1 == null){
+                Log.i("TRY", "pair1 is null!!");
+            }
+            if(one == null){
+                Log.i("TRY", "User one is null!!");
+            }
+            if(prekey1.getEncoded() == null){
+                Log.i("TRY", "prekey1 bytes is null");
+            }
+            byte[] signedPrekey1;
+            signedPrekey1 = one.signPreKey(pair1, prekey1.getEncoded());//null object reference in here to signPreKey
+            //pair1 is generated
 
             KeyBundle bundle1 = new KeyBundle(pub1, prekey1, signedPrekey1, prekeys1);
             //Key identity, Key prekey, Key signedPreKey, List<Key> prekeys
@@ -336,7 +363,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             //key agreement protocol here!!
             //Key IdentityOtherPub, Key SignedPreKeyOtherPub, Key signatureOfPreKeyOtherPub, Key oneTimePreKeyOtherpub
             Key secret = one.calculateSecretKey(bundle2.identity, bundle2.signedPreKey, bundle2.signedPreKeyBytes, bundle2.pickPrekeyToSend());
-            Log.i("AliceSECRETKEY", "Secret key from alice: " + secret.toString());
+            Log.i("TRY", "Secret key from alice: " + secret.toString());
             //both ways is important
             //need to change bundle to have signed prekey, signature of signed prekey
             //and one time prekey
@@ -379,12 +406,15 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             }//technically only need one prekey and just it to make signature
             id2 = ByteBuffer.wrap(ids2).getInt();
             id = ByteBuffer.wrap(ids1).getInt();
-            SecretKey ika = new SecretKeySpec(IKAForB,  "X25519");
-            SecretKey eka = new SecretKeySpec(EKAForB,  "X25519");
+            SecretKey ika = new SecretKeySpec(IKAForB,  "EC");
+
+            /*SecretKeyFactory factory = SecretKeyFactory.getInstance("EC");
+            SecretKey ika = factory.*/
+            SecretKey eka = new SecretKeySpec(EKAForB,  "EC");
             Key secret2 = two.calculateSecretKey(ika, bundle1.signedPreKey, bundle1.getSignedPreKey().getEncoded(), bundle1.getSpecificPreKey(id));
             byte[] AD2 =  two.k.concat(bundle1.identity.getEncoded(), bundle2.identity.getEncoded());
             decryptedInitialMessage = two.decryptInitialMessage(secret2, initialMessage, AD2);
-            Log.i("DecryptedInitialMessage", "Initial Message in string: " + decryptedInitialMessage.toString());
+            Log.i("TRY", "Initial Message in string: " + decryptedInitialMessage.toString());
             //how to check if actually decrypted
             //maybe add button for does this make sense??
             //delete any prekey used
@@ -419,16 +449,16 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             String encryptedMessage2 = two.encrypt(state2, message2, "");
             String decryptedMessage1 = two.decrypt(state2, encryptedMessage1, "");
             String decryptedMessage2 = one.decrypt(state1, encryptedMessage2, "");
-            Log.i("MESSAGE1PLAIN", "Message1 plain: " + message1);
-            Log.i("MESSAGE2PLAIN", "Message2 plain: " + message2);
-            Log.i("MESSAGE1ENCRYPTED", "Encrypted message1: " + encryptedMessage1);
-            Log.i("MESSAGE2ENCRYPTED", "Encrypted message2: " + encryptedMessage2);
-            Log.i("MESSAGE1DECRYPTED", "Decrypted message1: " + decryptedMessage1);
-            Log.i("MESSAGE2DECRYPTED", "Decrypted message2: " + encryptedMessage2);
+            Log.i("TRY", "Message1 plain: " + message1);
+            Log.i("TRY", "Message2 plain: " + message2);
+            Log.i("TRY", "Encrypted message1: " + encryptedMessage1);
+            Log.i("TRY", "Encrypted message2: " + encryptedMessage2);
+            Log.i("TRY", "Decrypted message1: " + decryptedMessage1);
+            Log.i("TRY", "Decrypted message2: " + encryptedMessage2);
         }catch(GeneralSecurityException e){
-            Log.i("ERRORINTRYENCRYPT", e.toString());
+            Log.i("TRYERROR", e.toString());
         }
-         Log.i("SKIPPEDTRY", "I'm after try!");
+         Log.i("TRY", "I'm after try!");
         //KeyFactory factory = KeyFactory.getInstance("EdDSA");
         /*KeyPairGenerator generator = KeyPairGenerator.getInstance("ECDSA");
         generator.initialize(ECNamedCurveTable.getParameterSpec("P-256"));//is this right??
