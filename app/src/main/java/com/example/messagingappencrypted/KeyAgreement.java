@@ -38,7 +38,7 @@ public class KeyAgreement {
 
     }
     public byte[] encode(Key pub){
-        return pub.getEncoded("UTF-16LE");
+        return pub.getEncoded();
         //pub.g
         //The recommended encoding consists of some single-byte constant
         // to represent the type of curve, followed by little-endian encoding
@@ -90,8 +90,12 @@ public class KeyAgreement {
     //from some cryptographic PRF keyed by SK
 
     //A can continue using SK or keys derived from SK to communicate
-    public Key calculateSecretKey(User user, Key IKO, Key SPKO, Key signedPrekeyO, Key OPKO){
-        Key dh1 = DH(user.actualBundle.identity, signedPrekeyO);
+    public Key calculateSecretKey(User user, Key IKO, Key SPKO, byte[] signedPrekeyO, Key OPKO){
+        //verify prekeysignature
+        //then generate ephemeral here if verified
+        //otherwise abort
+        user.generateNewEphemeral();
+        Key dh1 = DH(user.actualBundle.identity, SPKO);
         Key dh2 = DH(user.ephemeral, IKO);
 
         Key secret;
@@ -245,7 +249,6 @@ public class KeyAgreement {
         }
         return k;
     }
-    Rfc8
 
      public Key DH(KeyPair pair, Key pub){
         //DH calculation using pair private key and public
@@ -475,8 +478,8 @@ public class KeyAgreement {
              HKDFParameters params = new HKDFParameters(root.getEncoded(), output.getEncoded(), info);
              HKDFBytesGenerator hkdf = new HKDFBytesGenerator(new SHA256Digest());
              hkdf.init(params);
-             byte[] result = new byte[86];
-             hkdf.generateBytes(result, 0,86);
+             byte[] result = new byte[96];
+             hkdf.generateBytes(result, 0,96);
              //does this create one key? multiple keys??
              byte[] rootKeyResult = new byte[32];
              byte[] chainKeyResult = new byte[32];
@@ -489,8 +492,6 @@ public class KeyAgreement {
              SecretKey ckey = new SecretKeySpec(chainKeyResult,  "AES");
              SecretKey nkey = new SecretKeySpec(nextHeaderKey, "AES");
              keys = new Pair(new Pair(rkey, ckey), nkey);
-             //how to change from byte[] to Key
-             //what type of Key??
              //256 bits key is 32-byte array
          }catch(GeneralSecurityException e){
 
@@ -502,10 +503,11 @@ public class KeyAgreement {
         byte[] s = new byte[header.length+seq.length];
         for(int i = 0; i < seq.length; i++){
             s[i] = seq[i];
+
         }
-        for(int j = seq.length; j < header.length; j++){
-            s[j] = header[j];
-        }//CHANGE this to different maybe length-i or length-j
+        for(int j = seq.length; j < header.length+seq.length; j++){
+            s[j] = header[j-header.length];
+        }
         return s;
      }
     //to retrieve info from firebase...

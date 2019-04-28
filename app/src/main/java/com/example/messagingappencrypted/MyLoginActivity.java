@@ -43,6 +43,7 @@ import org.spongycastle.math.ec.ECFieldElement;
 import org.spongycastle.math.ec.ECPoint;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -54,6 +55,8 @@ import java.util.Set;
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 //change email edit to show fully what youre typing
 //authenticating seems to just keep doing it?
@@ -321,12 +324,59 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             User one = new User(ID);
             User two = new User(ID2);
             //key agreement protocol here!!
-            Key secret = one.calculateSecretKey(bundle2.identity, bundle2.prekey, bundle2.signature, bundle2.);
-            Key secret2 = two.calculateSecretKey(bundle1.identity, bundle1.prekey, );//make sure these match
+            //Key IdentityOtherPub, Key SignedPreKeyOtherPub, Key signatureOfPreKeyOtherPub, Key oneTimePreKeyOtherpub
+            Key secret = one.calculateSecretKey(bundle2.identity, bundle2.signedPreKey, bundle2.signedPreKeyBytes, bundle2.pickPrekeyToSend());
+
             //both ways is important
             //need to change bundle to have signed prekey, signature of signed prekey
             //and one time prekey
             //User user, Key IKO, Key SPKO, Key signedPrekeyO, Key OPKO
+            byte[] AD = one.k.concat(bundle1.identity.getEncoded(), bundle2.identity.getEncoded());
+            int[] identifiers = new int[2];
+            identifiers[0] = 1;
+            identifiers[1] = 1;//apprently use both
+            byte[] text = "Hello, let's start a session!".getBytes();
+            byte[] ciphertext = one.encryptInitialMessage(secret, text, AD);
+            byte[] initialMessageFromAlice = one.k.initialMessage(bundle1.identity, bundle2.identity, one.ephemeral.getPublic(), identifiers, ciphertext);
+            byte[] initialMessage = null;
+            byte[] decryptedInitialMessage = null;
+            byte[] IKAForB = new byte[32];
+            byte[] EKAForB = new byte[32];
+            byte[] ids = new byte[4];
+            int id;
+            int id2;
+            //if initialMessageFromAlice is 78
+            //
+            for(int i = 0; i < 32; i++){
+                IKAForB[i] = initialMessageFromAlice[i];
+            }
+            for(int i = 32; i < 65; i++){
+                EKAForB[i-32] = initialMessageFromAlice[i];
+            }
+            for(int i = 65; i < 73; i++){
+                ids[i-65] = initialMessageFromAlice[i];
+            }
+            for(int i = 73; i < initialMessageFromAlice.length; i++){
+                initialMessage[i-73] = initialMessageFromAlice[i];
+            }
+            byte[] ids1 = new byte[4];
+            byte[] ids2 = new byte[4];
+            for(int i = 0; i < 4; i++){
+                ids1[i] = ids[i];
+            }
+            for(int i = 4; i < 8; i++){
+                ids2[i-4] = ids[i];
+            }//technically only need one prekey and just it to make signature
+            id2 = ByteBuffer.wrap(ids2).getInt();
+            id = ByteBuffer.wrap(ids1).getInt();
+            SecretKey ika = new SecretKeySpec(IKAForB,  "AES");
+            SecretKey eka = new SecretKeySpec(EKAForB,  "AES");
+            Key secret2 = two.calculateSecretKey(ika, bundle1.signedPreKey, bundle1.getSignedPreKey().getEncoded(), bundle1.getSpecificPreKey(id));
+            byte[] AD2 =  two.k.concat(bundle1.identity.getEncoded(), bundle2.identity.getEncoded());
+            decryptedInitialMessage = two.decryptInitialMessage(secret2, initialMessage, AD2);
+            //how to check if actually decrypted
+            //maybe add button for does this make sense??
+            //delete any prekey used
             Key pub = bundle2.identity;
             KeyPair priv = null;
             Key sharedHeaderKeySelf = one.findState(state1).;

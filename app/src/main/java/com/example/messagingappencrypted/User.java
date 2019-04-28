@@ -259,9 +259,24 @@ public class User {
         return  plain.toString();
     }
 
-    public Key calculateSecretKey(Key IdentityOtherPub, Key SignedPreKeyOtherPub, Key signatureOfPreKeyOtherPub, Key oneTimePreKeyOtherpub){
+    public Key calculateSecretKey(Key IdentityOtherPub, Key SignedPreKeyOtherPub, byte[] signatureOfPreKeyOtherPub, Key oneTimePreKeyOtherpub){
         Key secret = k.calculateSecretKey(this, IdentityOtherPub, SignedPreKeyOtherPub, signatureOfPreKeyOtherPub, oneTimePreKeyOtherpub);
         return secret;
+    }
+
+    public byte[] encryptInitialMessage(Key key, byte[] text, byte[] AD){
+        byte[] ciphertext = k.encrypt(key, text, AD);
+        return ciphertext;
+    }
+
+    public byte[] decryptInitialMessage(Key key, byte[] ciphertext, byte[] AD){
+        byte[] plaintext = k.decrypt(key, ciphertext, AD);
+        return plaintext;
+    }
+
+    public byte[] signPreKey(KeyPair identity, byte[] bytes){
+        byte[] result = k.sig(identity, bytes);
+        return result;
     }
     //initialize using updateUserForRatchet#, after secret key is is agreed on
     //Alice's first message encrypted using ratchetEncrypt(state, string text, byte[])
