@@ -84,6 +84,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
         if (getSupportActionBar() != null) {
             getSupportActionBar().hide();
         }
+
     }
 
     protected void initViews() {
@@ -140,6 +141,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
 
     protected void afterLogin () {
         //ChatSDK.ui().startMainActivity(getApplicationContext());
+        TryActualEncryptionDecryption();
         finish();
     }
 
@@ -201,7 +203,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
         //KeyPairGenerator()
         try {
             KeyPairGenerator generator = KeyPairGenerator.getInstance("X25519");//does this actally work
-            generator.initialize(256);//what size??
+            /*generator.initialize(256);//what size??
             //do i need to worry about 33 byte EC key to 32 byte key??
             KeyPair pair = generator.generateKeyPair();
             Key priv = pair.getPrivate();
@@ -219,7 +221,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             String ID = ChatSDK.currentUserID();
             KeyBundle bundle = new KeyBundle(priv, prekey, prekeys);
             ActualKeyBundle realBundle = new ActualKeyBundle(ID, pair, actualPrekey, realPrekeys);
-            database.child("users").child(ID).setValue(bundle);
+            database.child("users").child(ID).setValue(bundle);*/
             //evey once in a while, upload new signed prekey and prekey signature
             //save private of actual key bundle to phone somehow
             //get public
@@ -296,12 +298,19 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             KeyPair actualPrekey1 = generator.generateKeyPair();
             Key prekey1 = actualPrekey1.getPublic();
             String ID = ChatSDK.currentUserID();
-            KeyBundle bundle1 = new KeyBundle(priv1, prekey1, prekeys1);
+            String ID2 = ChatSDK.currentUserID();
+            User one = new User(ID);
+            User two = new User(ID2);
+            byte[] signedPrekey1 = one.signPreKey(pair1, prekey1.getEncoded());
+            //should all keys be X25519 or DH for secret key spec????
+
+            KeyBundle bundle1 = new KeyBundle(pub1, prekey1, signedPrekey1, prekeys1);
+            //Key identity, Key prekey, Key signedPreKey, List<Key> prekeys
             ActualKeyBundle realBundle1 = new ActualKeyBundle(ID, pair1, actualPrekey1, realPrekeys1);
 
             KeyPair pair2 = generator.generateKeyPair();
-            Key priv2 = pair1.getPrivate();
-            Key pub2 = pair1.getPublic();
+            Key priv2 = pair2.getPrivate();
+            Key pub2 = pair2.getPublic();
             List<KeyPair> realPrekeys2 = new ArrayList<KeyPair>();
             for(int i = 0; i < 10; i++){
                 realPrekeys2.add(generator.generateKeyPair());
@@ -312,21 +321,19 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             }
             KeyPair actualPrekey2 = generator.generateKeyPair();
             Key prekey2 = actualPrekey2.getPublic();
-            String ID2 = ChatSDK.currentUserID();
-            Key signedPrekey1;
-            Key signedPrekey2;
-            //probbaly need to change actual key bundle to have the same
-            //signed prekey thing
-            KeyBundle bundle2 = new KeyBundle(priv2, prekey2, signedPrekey2, prekeys2);
-            ActualKeyBundle realBundle2 = new ActualKeyBundle(ID2, pair2, actualPrekey2, realPrekeys2);
+            byte[] signedPrekey2 = two.signPreKey(pair2, prekey2.getEncoded());
+
             State state1 = new State();
             State state2 = new State();
-            User one = new User(ID);
-            User two = new User(ID2);
+
+
+            KeyBundle bundle2 = new KeyBundle(priv2, prekey2, signedPrekey2, prekeys2);
+            ActualKeyBundle realBundle2 = new ActualKeyBundle(ID2, pair2, actualPrekey2, realPrekeys2);
+
             //key agreement protocol here!!
             //Key IdentityOtherPub, Key SignedPreKeyOtherPub, Key signatureOfPreKeyOtherPub, Key oneTimePreKeyOtherpub
             Key secret = one.calculateSecretKey(bundle2.identity, bundle2.signedPreKey, bundle2.signedPreKeyBytes, bundle2.pickPrekeyToSend());
-
+            Log.i("AliceSECRETKEY", "Secret key from alice: " + secret.toString());
             //both ways is important
             //need to change bundle to have signed prekey, signature of signed prekey
             //and one time prekey
@@ -369,24 +376,22 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             }//technically only need one prekey and just it to make signature
             id2 = ByteBuffer.wrap(ids2).getInt();
             id = ByteBuffer.wrap(ids1).getInt();
-            SecretKey ika = new SecretKeySpec(IKAForB,  "AES");
-            SecretKey eka = new SecretKeySpec(EKAForB,  "AES");
+            SecretKey ika = new SecretKeySpec(IKAForB,  "X25519");
+            SecretKey eka = new SecretKeySpec(EKAForB,  "X25519");
             Key secret2 = two.calculateSecretKey(ika, bundle1.signedPreKey, bundle1.getSignedPreKey().getEncoded(), bundle1.getSpecificPreKey(id));
             byte[] AD2 =  two.k.concat(bundle1.identity.getEncoded(), bundle2.identity.getEncoded());
             decryptedInitialMessage = two.decryptInitialMessage(secret2, initialMessage, AD2);
+            Log.i("DecryptedInitialMessage", "Initial Message in string: " + decryptedInitialMessage.toString());
             //how to check if actually decrypted
             //maybe add button for does this make sense??
             //delete any prekey used
             Key pub = bundle2.identity;
-            KeyPair priv = null;
-            Key sharedHeaderKeySelf = one.findState(state1).;
-            Key sharedNextHeaderOther = two.findState(state2).;
-            Key sharedHeaderKeyOther = null;//this and sharedHeader above must be same
-            Key nextHeaderSelf = null;//this and sharedNext above must be same
+            KeyPair priv = realBundle2.identity;
+            Key sharedHeaderKey = one.findState(state1).headerSending;
+            Key sharedNextHeaderKey = two.findState(state2).nextHeaderReceiving;
 
-
-            one.updateUserForRatchetStart(state1, secret, pub, sharedHeaderKeySelf, sharedNextHeaderOther);
-            two.updateUserFOrRatchetSecond(state2, secret, priv, sharedHeaderKeyOther, nextHeaderSelf);
+            one.updateUserForRatchetStart(state1, secret, pub, sharedHeaderKey, sharedNextHeaderKey);
+            two.updateUserFOrRatchetSecond(state2, secret, priv, sharedHeaderKey, sharedNextHeaderKey);
             //Okay so get key bundle, A verifies prekey signature and generates
             //ephemeral key pair EKA if it if works, then do calculate secret key,
             //after, A deletes ephemeral private key, calculates associated data
@@ -421,7 +426,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
 
         }
         //KeyFactory factory = KeyFactory.getInstance("EdDSA");
-        KeyPairGenerator generator = KeyPairGenerator.getInstance("ECDSA");
+        /*KeyPairGenerator generator = KeyPairGenerator.getInstance("ECDSA");
         generator.initialize(ECNamedCurveTable.getParameterSpec("P-256"));//is this right??
          KeyPair pair = generator.generateKeyPair();
 
@@ -465,7 +470,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
              protected ECPoint decompressPoint(int yTilde, BigInteger X1) {
                  return null;
              }
-         };
+         };*/
          //Signature s = Signature.getInstance("SHA256withECDSA");//bouncy castle
          //s.initSign(pair.getPrivate());
          //s.update(plaintext.getBytes());//update does what??

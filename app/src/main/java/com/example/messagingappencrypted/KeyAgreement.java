@@ -143,7 +143,7 @@ public class KeyAgreement {
 
         //salt is zero filled byte sequence equal to hash output length
         //info = "KDF for X3DH"
-        SecretKey k = new SecretKeySpec(result, "AES");
+        SecretKey k = new SecretKeySpec(result, "X25519");
         return k;
     }
 
@@ -287,8 +287,8 @@ public class KeyAgreement {
              two[0] = (byte)0x02;
              messageKey = HMAC_SHA256.doFinal(one);
              nextChainKey = HMAC_SHA256.doFinal(two);
-             SecretKey mkey = new SecretKeySpec(messageKey, "AES");
-             SecretKey ckey = new SecretKeySpec(nextChainKey, "AES");
+             SecretKey mkey = new SecretKeySpec(messageKey, "X25519");
+             SecretKey ckey = new SecretKeySpec(nextChainKey, "X25519");
              k = new Pair(mkey, ckey);
 
          }catch(GeneralSecurityException e){
@@ -454,7 +454,7 @@ public class KeyAgreement {
                     k[i] = bytes[i];
                 }
             }
-            SecretKey dh = new SecretKeySpec(k, "AES");
+            SecretKey dh = new SecretKeySpec(k, "X25519");
             header.updateHedaer(new BigInteger(n).intValue(), new BigInteger(pmic).intValue(), dh);
         }catch(GeneralSecurityException e){
 
@@ -488,9 +488,9 @@ public class KeyAgreement {
              System.arraycopy(result, rootKeyResult.length, chainKeyResult, 0, chainKeyResult.length);
              System.arraycopy(result, chainKeyResult.length, nextHeaderKey, 0, nextHeaderKey.length);
              KeyFactory kf = KeyFactory.getInstance("EC");//may not need this
-             SecretKey rkey = new SecretKeySpec(rootKeyResult,  "AES");//AES is 32-byte i think
-             SecretKey ckey = new SecretKeySpec(chainKeyResult,  "AES");
-             SecretKey nkey = new SecretKeySpec(nextHeaderKey, "AES");
+             SecretKey rkey = new SecretKeySpec(rootKeyResult,  "X25519");//AES is 32-byte i think
+             SecretKey ckey = new SecretKeySpec(chainKeyResult,  "X25519");
+             SecretKey nkey = new SecretKeySpec(nextHeaderKey, "X25519");
              keys = new Pair(new Pair(rkey, ckey), nkey);
              //256 bits key is 32-byte array
          }catch(GeneralSecurityException e){

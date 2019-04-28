@@ -5,11 +5,14 @@ import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
 public class KeyBundle {
     public Key identity;
     public Key prekey;
     public int signature;
-    public Key signedPreKey;
+    public SecretKey signedPreKey;
     public byte[] signedPreKeyBytes;
     public List<Key> prekeys;
     //public ArrayList<Key> prekeys;
@@ -17,11 +20,12 @@ public class KeyBundle {
     public KeyBundle(){
 
     }
-    public KeyBundle( Key identity, Key prekey, Key signedPreKey, ArrayList<Key> prekeys){
+    public KeyBundle( Key identity, Key prekey, byte[] signedPreKey, List<Key> prekeys){
         this.identity = identity;
         this.prekey = prekey;
         this.prekeys = prekeys;
-        this.signedPreKey = signedPreKey;
+        this.signedPreKeyBytes = signedPreKey;
+        this.signedPreKey = new SecretKeySpec(signedPreKey, "X25519");
     }
 
     public void updateBundle(){
