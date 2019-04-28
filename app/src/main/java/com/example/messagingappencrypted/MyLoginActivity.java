@@ -141,7 +141,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
 
     protected void afterLogin () {
         //ChatSDK.ui().startMainActivity(getApplicationContext());
-        TryActualEncryptionDecryption();
+
         finish();
     }
 
@@ -155,6 +155,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
         }
         AccountDetails details = AccountDetails.username(usernameEdit.getText().toString(), passwordEdit.getText().toString());
         authenticateWithDetails(details);
+        TryActualEncryptionDecryption();
     }
 
     public void authenticateWithDetails(AccountDetails details){
@@ -280,8 +281,10 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
      }
 
      public void TryActualEncryptionDecryption(){
+        Log.i("INTRYENCRYPT", "Before try!!");
         try{
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("X25519");//does this actally work
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("AES");//does this actally work, shuld be 25519
+            Log.i("INTRYENCRYPTACTUALTRY", "IN try!!");
             generator.initialize(256);//what size??
             //do i need to worry about 33 byte EC key to 32 byte key??
             KeyPair pair1 = generator.generateKeyPair();
@@ -423,8 +426,9 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             Log.i("MESSAGE1DECRYPTED", "Decrypted message1: " + decryptedMessage1);
             Log.i("MESSAGE2DECRYPTED", "Decrypted message2: " + encryptedMessage2);
         }catch(GeneralSecurityException e){
-
+            Log.i("ERRORINTRYENCRYPT", e.toString());
         }
+         Log.i("SKIPPEDTRY", "I'm after try!");
         //KeyFactory factory = KeyFactory.getInstance("EdDSA");
         /*KeyPairGenerator generator = KeyPairGenerator.getInstance("ECDSA");
         generator.initialize(ECNamedCurveTable.getParameterSpec("P-256"));//is this right??
