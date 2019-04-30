@@ -34,7 +34,7 @@ public class User {
     public KeyPair generateNewEphemeral(){
         KeyPair key = null;
         try{
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("X25519");
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
             key = generator.generateKeyPair();
         }catch(GeneralSecurityException e){
 
@@ -277,14 +277,34 @@ public class User {
 
     public byte[] signPreKey(KeyPair identity, byte[] bytes){
         //null object reference down 1
-        byte[] result;
+        byte[] result = new byte[32];
         if(identity == null){
-            Log.i("TRY", "identity is signature is null");
+            Log.i("IDK", "identity is signature is null");
         }
         if(bytes == null){
-            Log.i("TRY", "bytes in signature is null");
+            Log.i("IDK", "bytes in signature is null");
         }
-        result = k.sig(identity, bytes);
+        Log.i("IDK", "in users sign method");
+        if(identity.getPrivate() == null){
+            Log.i("IDK", "in User sig, private is null");
+        }
+        if(identity.getPublic() == null){
+            Log.i("IDK", "in User sig, public is null");
+        }
+        Log.i("IDK", "identity public: " + identity.getPublic().toString());
+        Log.i("IDK", "identity private: " + identity.getPrivate().toString());
+        if(bytes == null){
+            Log.i("IDK", "in User sig, bytes is null");
+        }
+        //gets to here with no complaint
+        //private key maybe isn't correct? prints out different than public key
+        try {
+            result = k.sig(identity, bytes);//definitely erroring here!!!!
+        }catch(Exception e) {
+            Log.i("IDKERROR", e.toString());
+        }
+
+
         return result;
     }
     //initialize using updateUserForRatchet#, after secret key is is agreed on

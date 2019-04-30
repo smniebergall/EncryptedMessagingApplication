@@ -155,7 +155,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
 
     protected void afterLogin () {
         //ChatSDK.ui().startMainActivity(getApplicationContext());
-
+        TryActualEncryptionDecryption();
         finish();
     }
 
@@ -169,7 +169,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
         }
         AccountDetails details = AccountDetails.username(usernameEdit.getText().toString(), passwordEdit.getText().toString());
         authenticateWithDetails(details);
-        TryActualEncryptionDecryption();
+
     }
 
     public void authenticateWithDetails(AccountDetails details){
@@ -295,10 +295,10 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
      }
 
      public void TryActualEncryptionDecryption(){
-        Log.i("TRY", "Before try!!");
+        Log.i("IDK", "Before try!!");
         try{
             KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");//does this actally work, shuld be 25519
-            Log.i("TRY", "IN try!!");
+            Log.i("IDK", "IN try!!");
             generator.initialize(256);//what size??
             //do i need to worry about 33 byte EC key to 32 byte key??
             KeyPair pair1 = generator.generateKeyPair();
@@ -314,26 +314,28 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             }
             KeyPair actualPrekey1 = generator.generateKeyPair();
             Key prekey1 = actualPrekey1.getPublic();
-            //String ID = ChatSDK.currentUserID();
+            Log.i("IDK", "IN try!! Prekeys done!");
+            /*//String ID = ChatSDK.currentUserID();
             //String ID2 = ChatSDK.currentUserID();
-            //thinks the above two are still active and not commented out??
+            //thinks the above two are still active and not commented out??*/
             String ID = "one";
             String ID2 = "two";
             User one = new User(ID);
             User two = new User(ID2);
+            Log.i("IDK", "IN try!! Created users!");
             if(pair1 == null){
-                Log.i("TRY", "pair1 is null!!");
+                Log.i("IDK", "pair1 is null!!");
             }
             if(one == null){
-                Log.i("TRY", "User one is null!!");
+                Log.i("IDK", "User one is null!!");
             }
             if(prekey1.getEncoded() == null){
-                Log.i("TRY", "prekey1 bytes is null");
+                Log.i("IDK", "prekey1 bytes is null");
             }
-            byte[] signedPrekey1;
+            byte[] signedPrekey1 = new byte[32];
             signedPrekey1 = one.signPreKey(pair1, prekey1.getEncoded());//null object reference in here to signPreKey
             //pair1 is generated
-
+            Log.i("IDK", "IN try!! Signed Prekeys!");
             KeyBundle bundle1 = new KeyBundle(pub1, prekey1, signedPrekey1, prekeys1);
             //Key identity, Key prekey, Key signedPreKey, List<Key> prekeys
             ActualKeyBundle realBundle1 = new ActualKeyBundle(ID, pair1, actualPrekey1, realPrekeys1);
@@ -359,11 +361,12 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
 
             KeyBundle bundle2 = new KeyBundle(priv2, prekey2, signedPrekey2, prekeys2);
             ActualKeyBundle realBundle2 = new ActualKeyBundle(ID2, pair2, actualPrekey2, realPrekeys2);
+            Log.i("IDK", "IN try!! Finished all bundles");
 
             //key agreement protocol here!!
             //Key IdentityOtherPub, Key SignedPreKeyOtherPub, Key signatureOfPreKeyOtherPub, Key oneTimePreKeyOtherpub
             Key secret = one.calculateSecretKey(bundle2.identity, bundle2.signedPreKey, bundle2.signedPreKeyBytes, bundle2.pickPrekeyToSend());
-            Log.i("TRY", "Secret key from alice: " + secret.toString());
+            Log.i("IDK", "Secret key from alice: " + secret.toString());
             //both ways is important
             //need to change bundle to have signed prekey, signature of signed prekey
             //and one time prekey
@@ -414,7 +417,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             Key secret2 = two.calculateSecretKey(ika, bundle1.signedPreKey, bundle1.getSignedPreKey().getEncoded(), bundle1.getSpecificPreKey(id));
             byte[] AD2 =  two.k.concat(bundle1.identity.getEncoded(), bundle2.identity.getEncoded());
             decryptedInitialMessage = two.decryptInitialMessage(secret2, initialMessage, AD2);
-            Log.i("TRY", "Initial Message in string: " + decryptedInitialMessage.toString());
+            Log.i("IDK", "Initial Message in string: " + decryptedInitialMessage.toString());
             //how to check if actually decrypted
             //maybe add button for does this make sense??
             //delete any prekey used
@@ -449,16 +452,16 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             String encryptedMessage2 = two.encrypt(state2, message2, "");
             String decryptedMessage1 = two.decrypt(state2, encryptedMessage1, "");
             String decryptedMessage2 = one.decrypt(state1, encryptedMessage2, "");
-            Log.i("TRY", "Message1 plain: " + message1);
-            Log.i("TRY", "Message2 plain: " + message2);
-            Log.i("TRY", "Encrypted message1: " + encryptedMessage1);
-            Log.i("TRY", "Encrypted message2: " + encryptedMessage2);
-            Log.i("TRY", "Decrypted message1: " + decryptedMessage1);
-            Log.i("TRY", "Decrypted message2: " + encryptedMessage2);
+            Log.i("IDK", "Message1 plain: " + message1);
+            Log.i("IDK", "Message2 plain: " + message2);
+            Log.i("IDK", "Encrypted message1: " + encryptedMessage1);
+            Log.i("IDK", "Encrypted message2: " + encryptedMessage2);
+            Log.i("IDK", "Decrypted message1: " + decryptedMessage1);
+            Log.i("IDK", "Decrypted message2: " + decryptedMessage2);
         }catch(GeneralSecurityException e){
-            Log.i("TRYERROR", e.toString());
+            Log.i("IDKERROR", e.toString());
         }
-         Log.i("TRY", "I'm after try!");
+         Log.i("IDK", "I'm after try!");
         //KeyFactory factory = KeyFactory.getInstance("EdDSA");
         /*KeyPairGenerator generator = KeyPairGenerator.getInstance("ECDSA");
         generator.initialize(ECNamedCurveTable.getParameterSpec("P-256"));//is this right??

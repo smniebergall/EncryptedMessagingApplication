@@ -110,7 +110,7 @@ public class KeyAgreement {
             byte[] concated = concat(concat(dh1.getEncoded(), dh2.getEncoded()), dh3.getEncoded());
             secret = KDF(concated);
         }
-        Log.i("TRY", "In calculateSecretKey");
+        Log.i("IDK", "In calculateSecretKey");
         return secret;
     }
     public byte[] initialMessage(Key IKA, Key IKB, Key EKA, int[] identifiers, byte[] ciphertext){
@@ -143,7 +143,7 @@ public class KeyAgreement {
         //salt is zero filled byte sequence equal to hash output length
         //info = "KDF for X3DH"
         SecretKey k = new SecretKeySpec(result, "EC");
-        Log.i("TRY", "In KDF");
+        Log.i("IDK", "In KDF");
         return k;
     }
 
@@ -168,11 +168,14 @@ public class KeyAgreement {
     // roles, serving as the first message within some post-X3DH protocol, and as
     // part of Alice's X3DH initial message.
     public byte[] sig(KeyPair pair, byte[] message){
-        byte[] bytes = null;
+        byte[] bytes = new byte[30];
+        Log.i("IDK", "In isg before the try catch");
+        Log.i("IDK", "Public: " + pair.getPublic().toString());
+        Log.i("IDK", "Private: " + pair.getPrivate().toString());
         //maybe 25519 for signature??
         try{
-            Log.i("TRY", "In sig");
-            Signature signature = new Signature("Ed25519") {
+            Log.i("IDK", "In sig");
+            Signature signature = new Signature("SHA256withECDSA") {
                 @Override
                 protected void engineInitVerify(PublicKey publicKey) throws InvalidKeyException {
 
@@ -218,7 +221,7 @@ public class KeyAgreement {
             bytes = signature.sign();
             //just sign and verify??
         }catch(GeneralSecurityException e){
-            Log.i("TRYERROR", e.toString());
+            Log.i("IDKERROR2", e.toString());
         }
 
         //represents a byte sequence that is an XEdDSA signature on the byte sequence
@@ -245,10 +248,10 @@ public class KeyAgreement {
             //java says this exists, android developers says it doesn't?
             //share key with server (String)(Base65.encode(pubKeu.encoded, 0)) maybe?
             //maybe with spongy castle?
-            Log.i("TRY", "In generate_DH");
+            Log.i("IDK", "In generate_DH");
         }catch(GeneralSecurityException e){
             //handle exception here
-            Log.i("TRYERROR", e.toString());
+            Log.i("IDKERROR", e.toString());
         }
         return k;
     }
@@ -261,11 +264,11 @@ public class KeyAgreement {
              javax.crypto.KeyAgreement agree = javax.crypto.KeyAgreement.getInstance("ECDH");
              agree.init(pair.getPrivate());
              a = agree.doPhase(pub, true);
-             Log.i("TRY", "In DH");
+             Log.i("IDK", "In DH");
              //bytes = agree.generateSecret();
          }catch(GeneralSecurityException e){
              //handle exception here
-             Log.i("TRYERROR", e.toString());
+             Log.i("IDKERROR", e.toString());
          }
          //return bytes;
          return a;
@@ -295,9 +298,9 @@ public class KeyAgreement {
              SecretKey mkey = new SecretKeySpec(messageKey, "X25519");
              SecretKey ckey = new SecretKeySpec(nextChainKey, "X25519");
              k = new Pair(mkey, ckey);
-             Log.i("TRY", "In KDF_CK");
+             Log.i("IDK", "In KDF_CK");
          }catch(GeneralSecurityException e){
-             Log.i("TRYERROR", e.toString());
+             Log.i("IDKERROR", e.toString());
          }
 
          //Mac mac = Mac.getInstance("HmacSHA1");
@@ -349,9 +352,9 @@ public class KeyAgreement {
              bytes = new byte[hmac.length+encrypted.length];
              System.arraycopy(encrypted, 0, bytes, 0, encrypted.length);
              System.arraycopy(hmac, 0, bytes, encrypted.length, hmac.length);
-             Log.i("TRY", "In encrypt");
+             Log.i("IDK", "In encrypt");
          }catch(GeneralSecurityException e){
-             Log.i("TRYERROR", e.toString());
+             Log.i("IDKERROR", e.toString());
          }
         return bytes;
      }
@@ -373,12 +376,12 @@ public class KeyAgreement {
             bytes = new byte[hmac.length+decrypted.length];
             System.arraycopy(decrypted, 0, bytes, 0, decrypted.length);
             System.arraycopy(hmac, 0, bytes, decrypted.length, hmac.length);
-            Log.i("TRY", "In decrypt");
+            Log.i("IDK", "In decrypt");
             //if authentictaion fails, exception is raised
             //but what is associated data and hwo does authentication fail
             //it has to match something right?? what??
         }catch(GeneralSecurityException e){
-            Log.i("TRYERROR", e.toString());
+            Log.i("IDKERROR", e.toString());
         }
         return bytes;
      }
@@ -420,9 +423,9 @@ public class KeyAgreement {
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.ENCRYPT_MODE, headerKey, IV);
             bytes = cipher.doFinal(plainText);
-            Log.i("TRY", "In hencrypt");
+            Log.i("IDK", "In hencrypt");
         }catch(GeneralSecurityException e){
-            Log.i("TRYERROR", e.toString());
+            Log.i("IDKERROR", e.toString());
         }
         //AEAD encryption of plaintext with header key
          //nonce must be either non-repeating or ranodm non-repeating chosen with
@@ -463,10 +466,10 @@ public class KeyAgreement {
                 }
             }
             SecretKey dh = new SecretKeySpec(k, "EC");
-            Log.i("TRY", "In hdecrypt");
+            Log.i("IDK", "In hdecrypt");
             header.updateHedaer(new BigInteger(n).intValue(), new BigInteger(pmic).intValue(), dh);
         }catch(GeneralSecurityException e){
-            Log.i("TRYERROR", e.toString());
+            Log.i("IDKERROR", e.toString());
         }
         //AEAD, if authentication fails or headerKey is empty, return NONE
         return header;
@@ -500,11 +503,11 @@ public class KeyAgreement {
              SecretKey rkey = new SecretKeySpec(rootKeyResult,  "EC");//AES is 32-byte i think
              SecretKey ckey = new SecretKeySpec(chainKeyResult,  "EC");
              SecretKey nkey = new SecretKeySpec(nextHeaderKey, "EC");
-             Log.i("TRY", "In kdf_rk_he");
+             Log.i("IDK", "In kdf_rk_he");
              keys = new Pair(new Pair(rkey, ckey), nkey);
              //256 bits key is 32-byte array
          }catch(GeneralSecurityException e){
-             Log.i("TRYERROR", e.toString());
+             Log.i("IDKERROR", e.toString());
          }
          //Pair<Pair<RootKey, ChainKey>, nextHeaderKey>
          return keys;

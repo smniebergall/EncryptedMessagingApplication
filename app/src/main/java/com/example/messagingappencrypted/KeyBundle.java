@@ -25,7 +25,7 @@ public class KeyBundle {
         this.prekey = prekey;
         this.prekeys = prekeys;
         this.signedPreKeyBytes = signedPreKey;
-        this.signedPreKey = new SecretKeySpec(signedPreKey, "X25519");
+        this.signedPreKey = new SecretKeySpec(signedPreKey, "EC");
     }
 
     public void updateBundle(){
