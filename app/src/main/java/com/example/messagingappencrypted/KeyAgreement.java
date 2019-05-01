@@ -182,50 +182,14 @@ public class KeyAgreement {
         //maybe 25519 for signature??
         try{
             Log.i("IDK", "In sig");
-            Signature signature = new Signature("SHA256withECDSA") {
-                @Override
-                protected void engineInitVerify(PublicKey publicKey) throws InvalidKeyException {
-
-                }
-
-                @Override
-                protected void engineInitSign(PrivateKey privateKey) throws InvalidKeyException {
-
-                }
-
-                @Override
-                protected void engineUpdate(byte b) throws SignatureException {
-
-                }
-
-                @Override
-                protected void engineUpdate(byte[] b, int off, int len) throws SignatureException {
-
-                }
-
-                @Override
-                protected byte[] engineSign() throws SignatureException {
-                    return new byte[0];
-                }
-
-                @Override
-                protected boolean engineVerify(byte[] sigBytes) throws SignatureException {
-                    return false;
-                }
-
-                @Override
-                protected void engineSetParameter(String param, Object value) throws InvalidParameterException {
-
-                }
-
-                @Override
-                protected Object engineGetParameter(String param) throws InvalidParameterException {
-                    return null;
-                }
-            };
-            signature.initSign(pair.getPrivate());
-            signature.update(message);
-            bytes = signature.sign();
+            Signature sig = Signature.getInstance("SHA256withECDSA");
+            sig.initSign(pair.getPrivate());
+            sig.update(message);
+            bytes = sig.sign();//messed up signature!!
+            //bytes length is 0??
+            Log.i("IDK", "Key sign finished: ");
+            Log.i("IDK", "Key sign finished, bytes: " + bytes);
+            Log.i("IDK", "Key sign finished, bytes length: " + bytes.length);
             //just sign and verify??
         }catch(GeneralSecurityException e){
             Log.i("IDKERROR2", e.toString());

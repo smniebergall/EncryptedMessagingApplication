@@ -278,33 +278,17 @@ public class User {
     public byte[] signPreKey(KeyPair identity, byte[] bytes){
         //null object reference down 1
         byte[] result = new byte[32];
-        if(identity == null){
-            Log.i("IDK", "identity is signature is null");
-        }
-        if(bytes == null){
-            Log.i("IDK", "bytes in signature is null");
-        }
-        Log.i("IDK", "in users sign method");
-        if(identity.getPrivate() == null){
-            Log.i("IDK", "in User sig, private is null");
-        }
-        if(identity.getPublic() == null){
-            Log.i("IDK", "in User sig, public is null");
-        }
-        Log.i("IDK", "identity public: " + identity.getPublic().toString());
-        Log.i("IDK", "identity private: " + identity.getPrivate().toString());
-        if(bytes == null){
-            Log.i("IDK", "in User sig, bytes is null");
-        }
-        //gets to here with no complaint
-        //private key maybe isn't correct? prints out different than public key
+        Log.i("IDK", "User sign identity pub: " + identity.getPublic());
+        Log.i("IDK", "User sign identity priv: " + identity.getPrivate());
+        Log.i("IDK", "User sign bytes: " + bytes);
+        Log.i("IDK", "User sign bytes length: " + bytes.length);
         try {
             result = k.sig(identity, bytes);//definitely erroring here!!!!
         }catch(Exception e) {
             Log.i("IDKERROR", e.toString());
         }
-
-
+        Log.i("IDK", "User sign result: " + result);
+        Log.i("IDK", "User sign result length: " + result.length);
         return result;
     }
     //initialize using updateUserForRatchet#, after secret key is is agreed on

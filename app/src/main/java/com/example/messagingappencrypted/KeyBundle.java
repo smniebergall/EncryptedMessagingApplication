@@ -18,7 +18,7 @@ public class KeyBundle {
     public Key identity;
     public Key prekey;
     public int signature;
-    public SecretKey signedPreKey = null;
+    public Key signedPreKey;
     public byte[] signedPreKeyBytes;
     public List<Key> prekeys;
     //public ArrayList<Key> prekeys;
@@ -33,9 +33,11 @@ public class KeyBundle {
         if(signedPreKey == null){
             Log.i("IDK", "signedPrekey is null");
         }
-        Log.i("IDK", "signedPrekey: " + signedPreKey.toString());
+        Log.i("IDK", "signedPrekey: " + signedPreKey);
+        Log.i("IDK", "signedPrekey length: " + signedPreKey.length);
         try{
-            this.signedPreKey = new SecretKeySpec(signedPreKey, 0, signedPreKey.length, "AES");//why is this an empty key??
+            SecretKey key = new SecretKeySpec(signedPreKey, 0, signedPreKey.length, "AES");
+            this.signedPreKey = key;//why is this an empty key??
             Log.i("IDK", "this.signedPrekey: " + this.signedPreKey.toString());
 
         }catch(Exception e){

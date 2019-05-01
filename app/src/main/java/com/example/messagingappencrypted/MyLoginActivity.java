@@ -339,6 +339,8 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             KeyPair actualPrekey2 = generator.generateKeyPair();
             Key prekey2 = actualPrekey2.getPublic();
             byte[] signedPrekey2 = two.signPreKey(pair2, prekey2.getEncoded());
+            Log.i("IDK", "signedPrekey2: " + signedPrekey2);
+            Log.i("IDK", "signedPrekey2 length: " + signedPrekey2.length);
             Log.i("IDK", "IN try!! Signed Prekeys for user 2 and finished prekeys and prekey signature for 2!");
             State state1 = new State();
             State state2 = new State();
