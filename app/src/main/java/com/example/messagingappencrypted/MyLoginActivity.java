@@ -85,20 +85,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
         if (getSupportActionBar() != null) {
             getSupportActionBar().hide();
         }
-        /*Provider[] providers = Security.getProviders();
-        for(Provider provider : providers){
-            boolean printedProvider = false;
-            Set<Provider.Service> services = provider.getServices();
-            for(Provider.Service service : services){
-                String algorithm = service.getAlgorithm();
-                String type = service.getType();
-                if(provider.getName().equalsIgnoreCase("BC"))
-                {
-                    System.out.printf("%n === %s ===%n%n", provider.getName());
-                    System.out.printf("Type: %s alg: %s%n", type, algorithm);
-                }
-            }
-        }*/
+
     }
 
     protected void initViews() {
@@ -295,6 +282,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
      }
 
      public void TryActualEncryptionDecryption(){
+
         Log.i("IDK", "Before try!!");
         try{
             KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");//does this actally work, shuld be 25519
@@ -323,23 +311,20 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             User one = new User(ID);
             User two = new User(ID2);
             Log.i("IDK", "IN try!! Created users!");
-            if(pair1 == null){
-                Log.i("IDK", "pair1 is null!!");
-            }
-            if(one == null){
-                Log.i("IDK", "User one is null!!");
-            }
-            if(prekey1.getEncoded() == null){
-                Log.i("IDK", "prekey1 bytes is null");
-            }
             byte[] signedPrekey1 = new byte[32];
             signedPrekey1 = one.signPreKey(pair1, prekey1.getEncoded());//null object reference in here to signPreKey
             //pair1 is generated
+
             Log.i("IDK", "IN try!! Signed Prekeys!");
+            Log.i("IDK", "IN try!! pub1 : " + pub1.toString());
+            Log.i("IDK", "IN try!! prekey1 : " + prekey1.toString());
+            Log.i("IDK", "IN try!! signedPrekey1 : " + signedPrekey1.toString());
+            //Log.i("IDK", "IN try!! realPrekeys1 : " + realPrekeys1.toString());
+
             KeyBundle bundle1 = new KeyBundle(pub1, prekey1, signedPrekey1, prekeys1);
             //Key identity, Key prekey, Key signedPreKey, List<Key> prekeys
             ActualKeyBundle realBundle1 = new ActualKeyBundle(ID, pair1, actualPrekey1, realPrekeys1);
-
+            Log.i("IDK", "IN try!! finished bundle1, about to start user 2's stuff");
             KeyPair pair2 = generator.generateKeyPair();
             Key priv2 = pair2.getPrivate();
             Key pub2 = pair2.getPublic();
@@ -354,10 +339,10 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             KeyPair actualPrekey2 = generator.generateKeyPair();
             Key prekey2 = actualPrekey2.getPublic();
             byte[] signedPrekey2 = two.signPreKey(pair2, prekey2.getEncoded());
-
+            Log.i("IDK", "IN try!! Signed Prekeys for user 2 and finished prekeys and prekey signature for 2!");
             State state1 = new State();
             State state2 = new State();
-
+            Log.i("IDK", "IN try!! States!");
 
             KeyBundle bundle2 = new KeyBundle(priv2, prekey2, signedPrekey2, prekeys2);
             ActualKeyBundle realBundle2 = new ActualKeyBundle(ID2, pair2, actualPrekey2, realPrekeys2);
@@ -365,6 +350,10 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
 
             //key agreement protocol here!!
             //Key IdentityOtherPub, Key SignedPreKeyOtherPub, Key signatureOfPreKeyOtherPub, Key oneTimePreKeyOtherpub
+            Log.i("IDK", "IN try!! bundle 2 identity: " + bundle2.identity);
+            Log.i("IDK", "IN try!! bundle 2 signedPrekey: " + bundle2.signedPreKey);
+            Log.i("IDK", "IN try!! bundle 2 signedPrekEy bytes: " + bundle2.signedPreKeyBytes);
+            Log.i("IDK", "IN try!! bundle 2 one-time prkeey: " + bundle2.pickPrekeyToSend());
             Key secret = one.calculateSecretKey(bundle2.identity, bundle2.signedPreKey, bundle2.signedPreKeyBytes, bundle2.pickPrekeyToSend());
             Log.i("IDK", "Secret key from alice: " + secret.toString());
             //both ways is important

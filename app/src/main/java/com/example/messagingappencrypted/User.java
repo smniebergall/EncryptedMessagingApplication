@@ -22,7 +22,7 @@ import androidx.annotation.Nullable;
 public class User {
     String userID;
     ActualKeyBundle actualBundle;
-    KeyAgreement k;
+    KeyAgreement k = new KeyAgreement();
     KeyPair ephemeral = null;
     List<State> states;
    // private Key ;

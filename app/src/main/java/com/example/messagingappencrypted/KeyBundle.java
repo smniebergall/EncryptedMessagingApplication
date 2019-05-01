@@ -1,7 +1,13 @@
 package com.example.messagingappencrypted;
 
+import android.util.Log;
+
 import java.security.Key;
+import java.security.KeyFactory;
 import java.security.KeyPair;
+import java.security.spec.ECPublicKeySpec;
+import java.security.spec.EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +18,7 @@ public class KeyBundle {
     public Key identity;
     public Key prekey;
     public int signature;
-    public SecretKey signedPreKey;
+    public SecretKey signedPreKey = null;
     public byte[] signedPreKeyBytes;
     public List<Key> prekeys;
     //public ArrayList<Key> prekeys;
@@ -24,8 +30,18 @@ public class KeyBundle {
         this.identity = identity;
         this.prekey = prekey;
         this.prekeys = prekeys;
-        this.signedPreKeyBytes = signedPreKey;
-        this.signedPreKey = new SecretKeySpec(signedPreKey, "EC");
+        if(signedPreKey == null){
+            Log.i("IDK", "signedPrekey is null");
+        }
+        Log.i("IDK", "signedPrekey: " + signedPreKey.toString());
+        try{
+            this.signedPreKey = new SecretKeySpec(signedPreKey, 0, signedPreKey.length, "AES");//why is this an empty key??
+            Log.i("IDK", "this.signedPrekey: " + this.signedPreKey.toString());
+
+        }catch(Exception e){
+            Log.i("IDKERROR2", e.toString());
+        }
+
     }
 
     public void updateBundle(){

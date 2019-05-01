@@ -19,6 +19,10 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.security.Provider;
+import java.security.Security;
+import java.util.Set;
+
 import co.chatsdk.core.base.BaseNetworkAdapter;
 import co.chatsdk.core.dao.Keys;
 import co.chatsdk.core.dao.Message;
@@ -85,6 +89,17 @@ public class MainActivity extends AppCompatActivity {
 
         ChatSDK.ui().startLoginActivity(context, true);
         ChatSDK.ui().startMainActivity(context);
+        /*Provider[] providers = Security.getProviders();
+         for(Provider provider : providers){
+             boolean printedProvider = false;
+             Set<Provider.Service> services = provider.getServices();
+             for(Provider.Service service : services){
+                 String algorithm = service.getAlgorithm();
+                 String type = service.getType();
+                     System.out.printf("%n === %s ===%n%n", provider.getName());
+                     System.out.printf("Type: %s alg: %s%n", type, algorithm);
+             }
+         }*/
         //InterfaceManager.shared().a.startMainActivity(context);
 
     }
@@ -93,6 +108,20 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         ChatSDK.ui().startLoginActivity(context, true);
         ChatSDK.ui().startMainActivity(context);
+        /*Provider[] providers = Security.getProviders();
+        for(Provider provider : providers){
+            boolean printedProvider = false;
+            Set<Provider.Service> services = provider.getServices();
+            for(Provider.Service service : services){
+                String algorithm = service.getAlgorithm();
+                String type = service.getType();
+                if(type.equalsIgnoreCase("SecretKey")){
+                    System.out.printf("%n === %s ===%n%n", provider.getName());
+                    System.out.printf("Type: %s alg: %s%n", type, algorithm);
+                }
+
+            }
+        }*/
         //ChatSDK.ui().startLoginActivity(context, true);
         //InterfaceManager.shared().a.startLoginActivity(context, true);
         //InterfaceManager.shared().a.startMainActivity(context);

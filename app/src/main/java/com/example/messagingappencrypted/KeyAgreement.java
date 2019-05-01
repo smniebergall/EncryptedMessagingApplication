@@ -94,7 +94,14 @@ public class KeyAgreement {
         //then generate ephemeral here if verified
         //otherwise abort
         user.generateNewEphemeral();
-        Key dh1 = DH(user.actualBundle.identity, SPKO);
+        Key dh1 = null;
+        Log.i("IDK", "identity public of user: " + user.actualBundle.identity.getPublic());
+        Log.i("IDK", "identity private of user: " + user.actualBundle.identity.getPrivate());
+        try{
+            dh1 = DH(user.actualBundle.identity, SPKO);
+        }catch(Exception e){
+            Log.i("IDKERROR2", e.toString());
+        }
         Key dh2 = DH(user.ephemeral, IKO);
 
         Key secret;
