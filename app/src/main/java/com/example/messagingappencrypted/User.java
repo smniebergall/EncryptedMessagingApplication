@@ -23,7 +23,7 @@ public class User {
     String userID;
     ActualKeyBundle actualBundle;
     KeyAgreement k = new KeyAgreement();
-    KeyPair ephemeral = null;
+    KeyPair ephemeral;
     List<State> states;
    // private Key ;
 
@@ -39,6 +39,7 @@ public class User {
         }catch(GeneralSecurityException e){
 
         }
+        ephemeral = key;
         return key;
     }
 
@@ -261,7 +262,11 @@ public class User {
     }
 
     public Key calculateSecretKey(Key IdentityOtherPub, Key SignedPreKeyOtherPub, byte[] signatureOfPreKeyOtherPub, Key oneTimePreKeyOtherpub){
+        Log.i("IDK", "In users calculate secret key");
+        Log.i("IDK", "In users calculate secret key, identity: " );
         Key secret = k.calculateSecretKey(this, IdentityOtherPub, SignedPreKeyOtherPub, signatureOfPreKeyOtherPub, oneTimePreKeyOtherpub);
+        Log.i("IDK", "Finished users calculate secret key");
+        Log.i("IDK", "In users calculate secret key, secret key length " + secret);
         return secret;
     }
 

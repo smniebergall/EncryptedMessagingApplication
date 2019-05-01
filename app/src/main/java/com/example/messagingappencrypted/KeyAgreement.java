@@ -93,15 +93,20 @@ public class KeyAgreement {
         //verify prekeysignature
         //then generate ephemeral here if verified
         //otherwise abort
+        Log.i("IDK", "In key agreement calculate ");
         user.generateNewEphemeral();
         Key dh1 = null;
+        /*if(user.actualBundle.identity == null){
+            Log.i("IDK", "identity in calculate is null");
+        }
         Log.i("IDK", "identity public of user: " + user.actualBundle.identity.getPublic());
-        Log.i("IDK", "identity private of user: " + user.actualBundle.identity.getPrivate());
+        Log.i("IDK", "identity private of user: " + user.actualBundle.identity.getPrivate());*/
         try{
             dh1 = DH(user.actualBundle.identity, SPKO);
         }catch(Exception e){
             Log.i("IDKERROR2", e.toString());
         }
+        Log.i("IDK", "key agreement ephemeral: " + user.ephemeral);
         Key dh2 = DH(user.ephemeral, IKO);
 
         Key secret;
@@ -182,10 +187,10 @@ public class KeyAgreement {
         //maybe 25519 for signature??
         try{
             Log.i("IDK", "In sig");
-            Signature sig = Signature.getInstance("SHA256withECDSA");
-            sig.initSign(pair.getPrivate());
-            sig.update(message);
-            bytes = sig.sign();//messed up signature!!
+            Signature signature = Signature.getInstance("SHA256withECDSA");
+            signature.initSign(pair.getPrivate());
+            signature.update(message);
+            bytes = signature.sign();//messed up signature!!
             //bytes length is 0??
             Log.i("IDK", "Key sign finished: ");
             Log.i("IDK", "Key sign finished, bytes: " + bytes);

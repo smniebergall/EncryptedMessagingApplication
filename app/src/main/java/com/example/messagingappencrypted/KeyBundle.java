@@ -30,6 +30,7 @@ public class KeyBundle {
         this.identity = identity;
         this.prekey = prekey;
         this.prekeys = prekeys;
+        this.signedPreKeyBytes = signedPreKey;
         if(signedPreKey == null){
             Log.i("IDK", "signedPrekey is null");
         }
