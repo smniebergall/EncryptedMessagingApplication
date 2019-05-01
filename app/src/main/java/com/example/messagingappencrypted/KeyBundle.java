@@ -42,7 +42,7 @@ public class KeyBundle {
             Log.i("IDK", "this.signedPrekey: " + this.signedPreKey.toString());
 
         }catch(Exception e){
-            Log.i("IDKERROR2", e.toString());
+            Log.i("IDKERRORkeybundle", e.toString());
         }
 
     }

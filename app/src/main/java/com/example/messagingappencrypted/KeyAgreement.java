@@ -96,26 +96,40 @@ public class KeyAgreement {
         Log.i("IDK", "In key agreement calculate ");
         user.generateNewEphemeral();
         Key dh1 = null;
-        /*if(user.actualBundle.identity == null){
-            Log.i("IDK", "identity in calculate is null");
-        }
-        Log.i("IDK", "identity public of user: " + user.actualBundle.identity.getPublic());
-        Log.i("IDK", "identity private of user: " + user.actualBundle.identity.getPrivate());*/
+        Key dh2 = null;
+        Key dh3 = null;
+        Key dh4 = null;
         try{
-            dh1 = DH(user.actualBundle.identity, SPKO);
+            //bundle2.identity, bundle2.signedPreKey, bundle2.signedPreKeyBytes, bundle2.pickPrekeyToSend()
+            //this, IdentityOtherPub, SignedPreKeyOtherPub, signatureOfPreKeyOtherPub, oneTimePreKeyOtherpub
+            dh1 = DH(user.actualBundle.identity, SPKO);//idnetity is considered null object??
         }catch(Exception e){
-            Log.i("IDKERROR2", e.toString());
+            Log.i("IDKERRORdh1", e.toString());
         }
+        //do logs up here for which class these keys are
+        //maybe can do secret key for ECDH
         Log.i("IDK", "key agreement ephemeral: " + user.ephemeral);
-        Key dh2 = DH(user.ephemeral, IKO);
-
-        Key secret;
-        Key dh3 = DH(user.ephemeral, SPKO);
+        try{
+            dh2 = DH(user.ephemeral, IKO);
+        }catch(Exception e){
+            Log.i("IDKERRORdh2", e.toString());
+        }
+        try{
+            dh3 = DH(user.ephemeral, SPKO);
+        }catch(Exception e){
+            Log.i("IDKERRORdh3", e.toString());
+        }
+        Key secret = null;
         //maybe not current users prekey, make a new ephemeral key for this
         if(OPKO != null){
-            Key dh4 = DH(user.ephemeral, OPKO);//maybe change ephemeral to actual key bundle??
-            byte[] concated = concat(concat(concat(dh1.getEncoded(), dh2.getEncoded()), dh3.getEncoded()), dh4.getEncoded());
-            secret = KDF(concated);
+            try{
+                dh4 = DH(user.ephemeral, OPKO);
+            }catch(Exception e){
+                Log.i("IDKERRORdh3", e.toString());
+                byte[] concated = concat(concat(concat(dh1.getEncoded(), dh2.getEncoded()), dh3.getEncoded()), dh4.getEncoded());
+                secret = KDF(concated);
+            }
+            //maybe change ephemeral to actual key bundle??
         }
         else
         {
@@ -197,7 +211,7 @@ public class KeyAgreement {
             Log.i("IDK", "Key sign finished, bytes length: " + bytes.length);
             //just sign and verify??
         }catch(GeneralSecurityException e){
-            Log.i("IDKERROR2", e.toString());
+            Log.i("IDKERRORsig", e.toString());
         }
 
         //represents a byte sequence that is an XEdDSA signature on the byte sequence
@@ -227,7 +241,7 @@ public class KeyAgreement {
             Log.i("IDK", "In generate_DH");
         }catch(GeneralSecurityException e){
             //handle exception here
-            Log.i("IDKERROR", e.toString());
+            Log.i("IDKERRORgenerateDH", e.toString());
         }
         return k;
     }
@@ -237,14 +251,27 @@ public class KeyAgreement {
          //byte[] bytes = null;
          Key a = null;
          try{
-             javax.crypto.KeyAgreement agree = javax.crypto.KeyAgreement.getInstance("ECDH");
+             javax.crypto.KeyAgreement agree = javax.crypto.KeyAgreement.getInstance("ECDH");//this is the source of error
+             //two SecretKeySpecs and one ECPrivateKey
+             Log.i("IDK", "DH pair class: " + pair.getClass());
+             Log.i("IDK", "DH pub class: " + pub.getClass());
+             //First is SecretKeySPec, then ECPrivateKey, then SecretKeySPec, then ECPublicKey
+             //do dh1, dh2, dh3, dh4
+             //dh1 = DH(user.actualBundle.identity, SPKO);
+             //dh2 = DH(user.ephemeral, IKO);
+             // dh3 = DH(user.ephemeral, SPKO);
+             // dh4 = DH(user.ephemeral, OPKO);
+             //SPKO, IKO, and OPKO are the problem
+             //
              agree.init(pair.getPrivate());
              a = agree.doPhase(pub, true);
+             //this has two incalid key exceptions not a public key
+             //EDPrivateKey and SecretKeySpec
              Log.i("IDK", "In DH");
              //bytes = agree.generateSecret();
          }catch(GeneralSecurityException e){
              //handle exception here
-             Log.i("IDKERROR", e.toString());
+             Log.i("IDKERRORDH", e.toString());
          }
          //return bytes;
          return a;
@@ -276,7 +303,7 @@ public class KeyAgreement {
              k = new Pair(mkey, ckey);
              Log.i("IDK", "In KDF_CK");
          }catch(GeneralSecurityException e){
-             Log.i("IDKERROR", e.toString());
+             Log.i("IDKERRORKDFCK", e.toString());
          }
 
          //Mac mac = Mac.getInstance("HmacSHA1");
@@ -330,7 +357,7 @@ public class KeyAgreement {
              System.arraycopy(hmac, 0, bytes, encrypted.length, hmac.length);
              Log.i("IDK", "In encrypt");
          }catch(GeneralSecurityException e){
-             Log.i("IDKERROR", e.toString());
+             Log.i("IDKERRORencrypt", e.toString());
          }
         return bytes;
      }
@@ -357,7 +384,7 @@ public class KeyAgreement {
             //but what is associated data and hwo does authentication fail
             //it has to match something right?? what??
         }catch(GeneralSecurityException e){
-            Log.i("IDKERROR", e.toString());
+            Log.i("IDKERRORdecrypt", e.toString());
         }
         return bytes;
      }
@@ -401,7 +428,7 @@ public class KeyAgreement {
             bytes = cipher.doFinal(plainText);
             Log.i("IDK", "In hencrypt");
         }catch(GeneralSecurityException e){
-            Log.i("IDKERROR", e.toString());
+            Log.i("IDKERRORhencrypt", e.toString());
         }
         //AEAD encryption of plaintext with header key
          //nonce must be either non-repeating or ranodm non-repeating chosen with
@@ -445,7 +472,7 @@ public class KeyAgreement {
             Log.i("IDK", "In hdecrypt");
             header.updateHedaer(new BigInteger(n).intValue(), new BigInteger(pmic).intValue(), dh);
         }catch(GeneralSecurityException e){
-            Log.i("IDKERROR", e.toString());
+            Log.i("IDKERRORhdecrypt", e.toString());
         }
         //AEAD, if authentication fails or headerKey is empty, return NONE
         return header;
@@ -483,7 +510,7 @@ public class KeyAgreement {
              keys = new Pair(new Pair(rkey, ckey), nkey);
              //256 bits key is 32-byte array
          }catch(GeneralSecurityException e){
-             Log.i("IDKERROR", e.toString());
+             Log.i("IDKERRORkdfrkhe", e.toString());
          }
          //Pair<Pair<RootKey, ChainKey>, nextHeaderKey>
          return keys;
@@ -609,27 +636,4 @@ public class KeyAgreement {
             state.chainKeySending = rootSendingPair.first.second;
             state.nextHeaderSending = rootSendingPair.second;
     }
-    //DH Ratchet:
-    //each party generates dh key pair that becomes their current ratchet key pair
-    //every messages from either party has a header which contains the senders
-    //current ratchet public key
-    //when new public key received, dh ratchet step is performed,
-    //which replaces the local party's current ratchet key pair with a new pair
-
-
-    //TO DO
-    //finish X3DH signatures with elliptic curves
-    //put into actual messages to display
-    //tests for secret key agreement, firebase publish and get and update keys,
-    //chack with hard coding that encryption and decryption work
-    //add errors where appropriate
-    //finish look of login and any other activity
-    //get rid of spongy castle, only need bouncy castle
-    //fix for loops
-    //java starts at 0 so need length-1
-    //do decrypting and encrypting of header
-    //get keys to and from firebase
-    //connect to messaging part
-    //fix concat and change anything other loops to concat
-    //finish  XEDDSA and VXEDDSA signature schemes
 }

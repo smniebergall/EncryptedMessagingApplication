@@ -264,6 +264,7 @@ public class User {
     public Key calculateSecretKey(Key IdentityOtherPub, Key SignedPreKeyOtherPub, byte[] signatureOfPreKeyOtherPub, Key oneTimePreKeyOtherpub){
         Log.i("IDK", "In users calculate secret key");
         Log.i("IDK", "In users calculate secret key, identity: " );
+        //bundle2.identity, bundle2.signedPreKey, bundle2.signedPreKeyBytes, bundle2.pickPrekeyToSend()
         Key secret = k.calculateSecretKey(this, IdentityOtherPub, SignedPreKeyOtherPub, signatureOfPreKeyOtherPub, oneTimePreKeyOtherpub);
         Log.i("IDK", "Finished users calculate secret key");
         Log.i("IDK", "In users calculate secret key, secret key length " + secret);

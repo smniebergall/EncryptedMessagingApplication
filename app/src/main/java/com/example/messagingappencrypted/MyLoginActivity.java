@@ -324,6 +324,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             KeyBundle bundle1 = new KeyBundle(pub1, prekey1, signedPrekey1, prekeys1);
             //Key identity, Key prekey, Key signedPreKey, List<Key> prekeys
             ActualKeyBundle realBundle1 = new ActualKeyBundle(ID, pair1, actualPrekey1, realPrekeys1);
+            one.updateKeyBundle(realBundle1);
             Log.i("IDK", "IN try!! finished bundle1, about to start user 2's stuff");
             KeyPair pair2 = generator.generateKeyPair();
             Key priv2 = pair2.getPrivate();
@@ -348,14 +349,18 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
 
             KeyBundle bundle2 = new KeyBundle(priv2, prekey2, signedPrekey2, prekeys2);
             ActualKeyBundle realBundle2 = new ActualKeyBundle(ID2, pair2, actualPrekey2, realPrekeys2);
+            two.updateKeyBundle(realBundle2);
             Log.i("IDK", "IN try!! Finished all bundles");
 
             //key agreement protocol here!!
+            //did i ever put bundles in the user??
             //Key IdentityOtherPub, Key SignedPreKeyOtherPub, Key signatureOfPreKeyOtherPub, Key oneTimePreKeyOtherpub
             Log.i("IDK", "IN try!! bundle 2 identity: " + bundle2.identity);
             Log.i("IDK", "IN try!! bundle 2 signedPrekey: " + bundle2.signedPreKey);
             Log.i("IDK", "IN try!! bundle 2 signedPrekEy bytes: " + bundle2.signedPreKeyBytes);
             Log.i("IDK", "IN try!! bundle 2 one-time prkeey: " + bundle2.pickPrekeyToSend());
+            Log.i("IDK", "IN try!! bundle 1 identity pub: " + realBundle1.identity.getPublic());
+            Log.i("IDK", "IN try!! bundle 1 identity priv: " + realBundle1.identity.getPrivate());
             Key secret = one.calculateSecretKey(bundle2.identity, bundle2.signedPreKey, bundle2.signedPreKeyBytes, bundle2.pickPrekeyToSend());
             Log.i("IDK", "Secret key from alice: " + secret.toString());
             //both ways is important
