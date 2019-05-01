@@ -48,6 +48,8 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.*;
+import java.security.spec.EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -347,7 +349,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             State state2 = new State();
             Log.i("IDK", "IN try!! States!");
 
-            KeyBundle bundle2 = new KeyBundle(priv2, prekey2, signedPrekey2, prekeys2);
+            KeyBundle bundle2 = new KeyBundle(pub2, prekey2, signedPrekey2, prekeys2);
             ActualKeyBundle realBundle2 = new ActualKeyBundle(ID2, pair2, actualPrekey2, realPrekeys2);
             two.updateKeyBundle(realBundle2);
             Log.i("IDK", "IN try!! Finished all bundles");
@@ -356,7 +358,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             //did i ever put bundles in the user??
             //Key IdentityOtherPub, Key SignedPreKeyOtherPub, Key signatureOfPreKeyOtherPub, Key oneTimePreKeyOtherpub
             Log.i("IDK", "IN try!! bundle 2 identity: " + bundle2.identity);
-            Log.i("IDK", "IN try!! bundle 2 signedPrekey: " + bundle2.signedPreKey);
+            Log.i("IDK", "IN try!! bundle 2 signedPrekey: " + bundle2.signedPreKey);//this now says null??
             Log.i("IDK", "IN try!! bundle 2 signedPrekEy bytes: " + bundle2.signedPreKeyBytes);
             Log.i("IDK", "IN try!! bundle 2 one-time prkeey: " + bundle2.pickPrekeyToSend());
             Log.i("IDK", "IN try!! bundle 1 identity pub: " + realBundle1.identity.getPublic());
@@ -405,12 +407,16 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             }//technically only need one prekey and just it to make signature
             id2 = ByteBuffer.wrap(ids2).getInt();
             id = ByteBuffer.wrap(ids1).getInt();
-            SecretKey ika = new SecretKeySpec(IKAForB,  "EC");
-
+            //SecretKey ika = new SecretKeySpec(IKAForB,  "ECDH");
+            KeyFactory keyFactory = KeyFactory.getInstance("DH");
+            EncodedKeySpec keySpec = new X509EncodedKeySpec(IKAForB);
+            PublicKey ikaKey = keyFactory.generatePublic(keySpec);
             /*SecretKeyFactory factory = SecretKeyFactory.getInstance("EC");
             SecretKey ika = factory.*/
-            SecretKey eka = new SecretKeySpec(EKAForB,  "EC");
-            Key secret2 = two.calculateSecretKey(ika, bundle1.signedPreKey, bundle1.getSignedPreKey().getEncoded(), bundle1.getSpecificPreKey(id));
+            //SecretKey eka = new SecretKeySpec(EKAForB,  "ECDH");
+            EncodedKeySpec keySpeceka = new X509EncodedKeySpec(EKAForB);
+            PublicKey ekaKey = keyFactory.generatePublic(keySpeceka);
+            Key secret2 = two.calculateSecretKey(ikaKey, bundle1.signedPreKey, bundle1.getSignedPreKey().getEncoded(), bundle1.getSpecificPreKey(id));
             byte[] AD2 =  two.k.concat(bundle1.identity.getEncoded(), bundle2.identity.getEncoded());
             decryptedInitialMessage = two.decryptInitialMessage(secret2, initialMessage, AD2);
             Log.i("IDK", "Initial Message in string: " + decryptedInitialMessage.toString());

@@ -22,9 +22,11 @@ import java.util.Objects;
 import org.spongycastle.crypto.digests.SHA256Digest;
 import org.spongycastle.crypto.generators.HKDFBytesGenerator;
 import org.spongycastle.crypto.params.HKDFParameters;
+import org.spongycastle.jce.interfaces.ECPublicKey;
 
 import javax.crypto.Cipher;
 import javax.crypto.*;
+import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -94,7 +96,14 @@ public class KeyAgreement {
         //then generate ephemeral here if verified
         //otherwise abort
         Log.i("IDK", "In key agreement calculate ");
+        /*Log.i("IDK", "DH SPKO: " + SPKO.getClass());//SecretKeySpec, signedPrekey
+        Log.i("IDK", "DH OPKO: " + OPKO.getClass());//ECPublic, pickedPreKey
+        Log.i("IDK", "DH IKO: " + IKO.getClass());//ECPrivate?*/
+        //maybe see if you can make ECDH keys??
         user.generateNewEphemeral();
+        /*PublicKey ikopub = (DHPublicKey)IKO;
+        PublicKey spkopub = (DHPublicKey)SPKO;
+        PublicKey opkopub = (DHPublicKey)OPKO;*/
         Key dh1 = null;
         Key dh2 = null;
         Key dh3 = null;
@@ -168,31 +177,11 @@ public class KeyAgreement {
 
         //salt is zero filled byte sequence equal to hash output length
         //info = "KDF for X3DH"
-        SecretKey k = new SecretKeySpec(result, "EC");
+        SecretKey k = new SecretKeySpec(result, "ECDH");
         Log.i("IDK", "In KDF");
         return k;
     }
 
-    //probbaly only need to do new type of conversation not new type of message
-    //should I do immediate decrypt on receiving message or have button
-    //button seems like a good idea
-
-//Alice verifies the prekey signature and aborts the protocol if verification fails.
-// Alice then generates an ephemeral key pair with public key EKA.
-//After calculating SK, Alice deletes her ephemeral private key and the DH outputs.
-//Alice then calculates an "associated data" byte sequence AD that contains identity
-// information for both parties:
-//    AD = Encode(IKA) || Encode(IKB)
-    //Alice then sends Bob an initial message containing: Alice's identity key IKA,
-    //Alice's ephemeral key EKA, Identifiers stating which of Bob's prekeys Alice used,
-    //An initial ciphertext encrypted with some AEAD encryption scheme [4] using AD
-// as associated data and using an encryption key which is either SK or the output
-// from some cryptographic PRF keyed by SK.
-
-    //The initial ciphertext is typically the first message in some post-X3DH
-    // communication protocol. In other words, this ciphertext typically has two
-    // roles, serving as the first message within some post-X3DH protocol, and as
-    // part of Alice's X3DH initial message.
     public byte[] sig(KeyPair pair, byte[] message){
         byte[] bytes = new byte[30];
         Log.i("IDK", "In isg before the try catch");
@@ -233,7 +222,7 @@ public class KeyAgreement {
     public KeyPair generate_DH(){
         KeyPair k = null;
         try{
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("ECDH");
             k = generator.generateKeyPair();
             //java says this exists, android developers says it doesn't?
             //share key with server (String)(Base65.encode(pubKeu.encoded, 0)) maybe?
@@ -245,33 +234,32 @@ public class KeyAgreement {
         }
         return k;
     }
-
+//KeyFactory keyFactory = KeyFactory.getInstance("DH");
+//    EncodedKeySpec keySpec = new X509EncodedKeySpec(pubK);
+//    return keyFactory.generatePublic(keySpec);
      public Key DH(KeyPair pair, Key pub){
         //DH calculation using pair private key and public
          //byte[] bytes = null;
          Key a = null;
          try{
+             //PublicKey k = (ECPublicKey)pub;
              javax.crypto.KeyAgreement agree = javax.crypto.KeyAgreement.getInstance("ECDH");//this is the source of error
              //two SecretKeySpecs and one ECPrivateKey
-             Log.i("IDK", "DH pair class: " + pair.getClass());
-             Log.i("IDK", "DH pub class: " + pub.getClass());
+            /* Log.i("IDK", "DH pair class: " + pair.getClass());*/
+            /* Log.i("IDK", "DH pub class: " + pub.getClass());//can you redo SecretKeySpec as DH??*/
              //First is SecretKeySPec, then ECPrivateKey, then SecretKeySPec, then ECPublicKey
-             //do dh1, dh2, dh3, dh4
-             //dh1 = DH(user.actualBundle.identity, SPKO);
-             //dh2 = DH(user.ephemeral, IKO);
-             // dh3 = DH(user.ephemeral, SPKO);
-             // dh4 = DH(user.ephemeral, OPKO);
              //SPKO, IKO, and OPKO are the problem
              //
              agree.init(pair.getPrivate());
              a = agree.doPhase(pub, true);
-             //this has two incalid key exceptions not a public key
-             //EDPrivateKey and SecretKeySpec
              Log.i("IDK", "In DH");
+             //should i do below??
              //bytes = agree.generateSecret();
          }catch(GeneralSecurityException e){
              //handle exception here
-             Log.i("IDKERRORDH", e.toString());
+             Log.i("IDKERRORDH", e.toString());//doed invalid, in DH, invalid, in DH
+             //so first and third which is signed prekey of other person
+             //which makes sense because yeah its null from earlier print outs
          }
          //return bytes;
          return a;
@@ -298,8 +286,11 @@ public class KeyAgreement {
              two[0] = (byte)0x02;
              messageKey = HMAC_SHA256.doFinal(one);
              nextChainKey = HMAC_SHA256.doFinal(two);
-             SecretKey mkey = new SecretKeySpec(messageKey, "X25519");
-             SecretKey ckey = new SecretKeySpec(nextChainKey, "X25519");
+             SecretKey mkey = new SecretKeySpec(messageKey, "ECDH");
+             //KeyFactory keyFactory = KeyFactory.getInstance("DH");
+             //    EncodedKeySpec keySpec = new X509EncodedKeySpec(pubK);
+             //    return keyFactory.generatePublic(keySpec);
+             SecretKey ckey = new SecretKeySpec(nextChainKey, "ECDH");
              k = new Pair(mkey, ckey);
              Log.i("IDK", "In KDF_CK");
          }catch(GeneralSecurityException e){
@@ -468,7 +459,7 @@ public class KeyAgreement {
                     k[i] = bytes[i];
                 }
             }
-            SecretKey dh = new SecretKeySpec(k, "EC");
+            SecretKey dh = new SecretKeySpec(k, "ECDH");
             Log.i("IDK", "In hdecrypt");
             header.updateHedaer(new BigInteger(n).intValue(), new BigInteger(pmic).intValue(), dh);
         }catch(GeneralSecurityException e){
@@ -502,10 +493,10 @@ public class KeyAgreement {
              System.arraycopy(result, 0, rootKeyResult, 0, rootKeyResult.length);
              System.arraycopy(result, rootKeyResult.length, chainKeyResult, 0, chainKeyResult.length);
              System.arraycopy(result, chainKeyResult.length, nextHeaderKey, 0, nextHeaderKey.length);
-             KeyFactory kf = KeyFactory.getInstance("EC");//may not need this
-             SecretKey rkey = new SecretKeySpec(rootKeyResult,  "EC");//AES is 32-byte i think
-             SecretKey ckey = new SecretKeySpec(chainKeyResult,  "EC");
-             SecretKey nkey = new SecretKeySpec(nextHeaderKey, "EC");
+             KeyFactory kf = KeyFactory.getInstance("ECDH");//may not need this
+             SecretKey rkey = new SecretKeySpec(rootKeyResult,  "ECDH");//AES is 32-byte i think
+             SecretKey ckey = new SecretKeySpec(chainKeyResult,  "ECDH");
+             SecretKey nkey = new SecretKeySpec(nextHeaderKey, "ECDH");
              Log.i("IDK", "In kdf_rk_he");
              keys = new Pair(new Pair(rkey, ckey), nkey);
              //256 bits key is 32-byte array
