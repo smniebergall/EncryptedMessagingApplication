@@ -341,7 +341,8 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             }
             KeyPair actualPrekey2 = generator.generateKeyPair();
             Key prekey2 = actualPrekey2.getPublic();
-            byte[] signedPrekey2 = two.signPreKey(pair2, prekey2.getEncoded());
+            byte[] signedPrekey2 = two.signPreKey(pair2, prekey2.getEncoded());//so this is the signature, and the bytes version
+            //so in the bundle
             Log.i("IDK", "signedPrekey2: " + signedPrekey2);
             Log.i("IDK", "signedPrekey2 length: " + signedPrekey2.length);
             Log.i("IDK", "IN try!! Signed Prekeys for user 2 and finished prekeys and prekey signature for 2!");
@@ -358,12 +359,12 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             //did i ever put bundles in the user??
             //Key IdentityOtherPub, Key SignedPreKeyOtherPub, Key signatureOfPreKeyOtherPub, Key oneTimePreKeyOtherpub
             Log.i("IDK", "IN try!! bundle 2 identity: " + bundle2.identity);
-            Log.i("IDK", "IN try!! bundle 2 signedPrekey: " + bundle2.signedPreKey);//this now says null??
+            Log.i("IDK", "IN try!! bundle 2 signedPrekey: " + bundle2.prekey);//this now says null??
             Log.i("IDK", "IN try!! bundle 2 signedPrekEy bytes: " + bundle2.signedPreKeyBytes);
             Log.i("IDK", "IN try!! bundle 2 one-time prkeey: " + bundle2.pickPrekeyToSend());
             Log.i("IDK", "IN try!! bundle 1 identity pub: " + realBundle1.identity.getPublic());
             Log.i("IDK", "IN try!! bundle 1 identity priv: " + realBundle1.identity.getPrivate());
-            Key secret = one.calculateSecretKey(bundle2.identity, bundle2.signedPreKey, bundle2.signedPreKeyBytes, bundle2.pickPrekeyToSend());
+            Key secret = one.calculateSecretKey(bundle2.identity, bundle2.prekey, bundle2.signedPreKeyBytes, bundle2.pickPrekeyToSend());
             Log.i("IDK", "Secret key from alice: " + secret.toString());
             //both ways is important
             //need to change bundle to have signed prekey, signature of signed prekey
@@ -405,6 +406,10 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             for(int i = 4; i < 8; i++){
                 ids2[i-4] = ids[i];
             }//technically only need one prekey and just it to make signature
+            //signature: initSign with private key, then update with bytes, then sign for signature,
+            //init verfiy using public key, verify signature
+            //so maybe dont need to pass ranodm stuff
+            //pass the public key of what you signed and the bytes associated with it??
             id2 = ByteBuffer.wrap(ids2).getInt();
             id = ByteBuffer.wrap(ids1).getInt();
             //SecretKey ika = new SecretKeySpec(IKAForB,  "ECDH");
@@ -416,7 +421,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             //SecretKey eka = new SecretKeySpec(EKAForB,  "ECDH");
             EncodedKeySpec keySpeceka = new X509EncodedKeySpec(EKAForB);
             PublicKey ekaKey = keyFactory.generatePublic(keySpeceka);
-            Key secret2 = two.calculateSecretKey(ikaKey, bundle1.signedPreKey, bundle1.getSignedPreKey().getEncoded(), bundle1.getSpecificPreKey(id));
+            Key secret2 = two.calculateSecretKey(ikaKey, bundle1.prekey, bundle1.getSignedPreKey().getEncoded(), bundle1.getSpecificPreKey(id));
             byte[] AD2 =  two.k.concat(bundle1.identity.getEncoded(), bundle2.identity.getEncoded());
             decryptedInitialMessage = two.decryptInitialMessage(secret2, initialMessage, AD2);
             Log.i("IDK", "Initial Message in string: " + decryptedInitialMessage.toString());
@@ -464,82 +469,6 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             Log.i("IDKERROR", e.toString());
         }
          Log.i("IDK", "I'm after try!");
-        //KeyFactory factory = KeyFactory.getInstance("EdDSA");
-        /*KeyPairGenerator generator = KeyPairGenerator.getInstance("ECDSA");
-        generator.initialize(ECNamedCurveTable.getParameterSpec("P-256"));//is this right??
-         KeyPair pair = generator.generateKeyPair();
-
-         ECCurve curve = new ECCurve() {
-             @Override
-             public int getFieldSize() {
-                 return 0;
-             }
-
-             @Override
-             public ECFieldElement fromBigInteger(BigInteger x) {
-                 return null;
-             }
-
-             @Override
-             public boolean isValidFieldElement(BigInteger x) {
-                 return false;
-             }
-
-             @Override
-             protected ECCurve cloneCurve() {
-                 return null;
-             }
-
-             @Override
-             protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, boolean withCompression) {
-                 return null;
-             }
-
-             @Override
-             protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression) {
-                 return null;
-             }
-
-             @Override
-             public ECPoint getInfinity() {
-                 return null;
-             }
-
-             @Override
-             protected ECPoint decompressPoint(int yTilde, BigInteger X1) {
-                 return null;
-             }
-         };*/
-         //Signature s = Signature.getInstance("SHA256withECDSA");//bouncy castle
-         //s.initSign(pair.getPrivate());
-         //s.update(plaintext.getBytes());//update does what??
-         //s.sign();//byte outBuf, int offset, int len, puts signature in outbuf, or juts
-         //normal sign
-         //update updates data to be signed or verified
-         //verify(byte[] signature) or with offset snd len
-         //Signature verify = Signature.getInstance("SHA256withECDSA");
-         //verify.initVerify(pair.getPublic());
-         //verify.update(plaintext.getBytes());
-         //boolean result = verify.verify(signature);
-
-         //initial message it 32 bytes IKA, 32 bytes EKA, 4 bytes for int saying which
-         // prekey, and the rest is ciphertext
 
      }
-
-     //create and verify EdDSA-signatures!!!! XEdDSA signature scheme
-    //Ellipctic curve uses montogmery ladder but need twisted edwards
-    //XEdDSA signing and verifying requires k (mongomery private key)
-    //M (message to sgn(byte seq)), Z (64 bytes of secure random data)
-    //output is siganture (R||s) of byte seq of length 2b where R encodes
-    //a point and s encodes an integer modulo q
-    //SHA-512 used, need hash function that applies hash to input,
-    //and returns integer which is output of the hash parsed in little-endian
-    //xeddsa_sign(k, M, Z){ Pair<A,a> = calculateKeyPair(k); r = hash(a||M||Z)(mod q)
-    //R = rB; h = hash(R||A||M)(mod q); s = r + ha(mod q); return R || s;}
-    //xeddsa_verify(u, M, (R||s)){ if u >= p or R.y >= 2^|p| or s >= 2^|q|{ return false}
-    //A = convert_mont(u); if not on_curve(A) then return false; h = hash(R||A||M)(mod q);
-    //R(check) = sB - hA; if bytes_equal(R, R(check)) then return true; return false;
-    //
-
 }

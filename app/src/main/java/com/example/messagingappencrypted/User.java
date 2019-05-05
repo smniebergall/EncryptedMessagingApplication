@@ -267,7 +267,10 @@ public class User {
         //bundle2.identity, bundle2.signedPreKey, bundle2.signedPreKeyBytes, bundle2.pickPrekeyToSend()
         Key secret = k.calculateSecretKey(this, IdentityOtherPub, SignedPreKeyOtherPub, signatureOfPreKeyOtherPub, oneTimePreKeyOtherpub);
         Log.i("IDK", "Finished users calculate secret key");
-        Log.i("IDK", "In users calculate secret key, secret key length " + secret);
+        if(secret == null){
+            Log.i("IDK", "Secret is null");//secret is defitnely null
+        }
+        Log.i("IDK", "In users calculate secret key, secret key length " + secret.getEncoded().length);//says this secret is null
         return secret;
     }
 

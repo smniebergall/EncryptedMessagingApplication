@@ -239,7 +239,7 @@ public class KeyAgreement {
 //    return keyFactory.generatePublic(keySpec);
      public Key DH(KeyPair pair, Key pub){
         //DH calculation using pair private key and public
-         //byte[] bytes = null;
+         SecretKey k = null;
          Key a = null;
          try{
              //PublicKey k = (ECPublicKey)pub;
@@ -250,19 +250,20 @@ public class KeyAgreement {
              //First is SecretKeySPec, then ECPrivateKey, then SecretKeySPec, then ECPublicKey
              //SPKO, IKO, and OPKO are the problem
              //
+             Log.i("IDK", "In DH, pair.private : " + pair.getPrivate());
+             Log.i("IDK", "In DH, public key : " + pub);
              agree.init(pair.getPrivate());
              a = agree.doPhase(pub, true);
-             Log.i("IDK", "In DH");
+             k = agree.generateSecret("ECDH");
+             Log.i("IDK", "Finish DH, a : " + a);
+             Log.i("IDK", "Finish DH, k secret key : " + k);
              //should i do below??
              //bytes = agree.generateSecret();
          }catch(GeneralSecurityException e){
              //handle exception here
-             Log.i("IDKERRORDH", e.toString());//doed invalid, in DH, invalid, in DH
-             //so first and third which is signed prekey of other person
-             //which makes sense because yeah its null from earlier print outs
+             Log.i("IDKERRORDH", e.toString());
          }
-         //return bytes;
-         return a;
+         return k;
      }
 
      public Pair<Key, Key> KDF_CK(Key chain){

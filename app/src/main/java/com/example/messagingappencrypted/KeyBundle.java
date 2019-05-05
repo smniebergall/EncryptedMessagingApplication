@@ -22,7 +22,7 @@ public class KeyBundle {
     public Key identity;
     public Key prekey;
     public int signature;
-    public Key signedPreKey;
+    //public PublicKey signedPreKey;
     public byte[] signedPreKeyBytes;
     public List<Key> prekeys;
     //public ArrayList<Key> prekeys;
@@ -35,16 +35,15 @@ public class KeyBundle {
         this.prekey = prekey;
         this.prekeys = prekeys;
         this.signedPreKeyBytes = signedPreKey;
-        //PublicKey key = new ECPublicKeySpec()
         if(signedPreKey == null){
             Log.i("IDK", "signedPrekey is null");
         }
         Log.i("IDK", "key bundle, signedPrekey: " + signedPreKey);
         Log.i("IDK", "key bundle, signedPrekey length: " + signedPreKey.length);
-        try{
-            KeyFactory keyFactory = KeyFactory.getInstance("ECDH");
-            //EncodedKeySpec keySpec = new X509EncodedKeySpec(signedPreKey);//may not recognize encoded key spec maybe
-            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(signedPreKey);
+        /*try{
+            KeyFactory keyFactory = KeyFactory.getInstance("DH");
+            EncodedKeySpec keySpec = new X509EncodedKeySpec(signedPreKey);//may not recognize encoded key spec maybe
+            //X509EncodedKeySpec keySpec = new X509EncodedKeySpec(signedPreKey);
             PublicKey signedPrekeyKey = keyFactory.generatePublic(keySpec);
             this.signedPreKey = signedPrekeyKey;//why is this an empty key??
             Log.i("IDK", "this.signedPrekey: " + this.signedPreKey.toString());
@@ -52,7 +51,7 @@ public class KeyBundle {
         }catch(Exception e){
             Log.i("IDKERRORkeybundle", e.toString());
         }
-
+*/
     }
 
     public void updateBundle(){
@@ -76,6 +75,6 @@ public class KeyBundle {
         return prekeys.get(i);
     }
     public Key getSignedPreKey(){
-        return signedPreKey;
+        return prekey;
     }
 }
