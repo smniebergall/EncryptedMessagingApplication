@@ -366,17 +366,17 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             Log.i("IDK", "IN try!! bundle 1 identity priv: " + realBundle1.identity.getPrivate());
             Key secret = one.calculateSecretKey(bundle2.identity, bundle2.prekey, bundle2.signedPreKeyBytes, bundle2.pickPrekeyToSend());
             Log.i("IDK", "Secret key from alice: " + secret.toString());
-            //both ways is important
-            //need to change bundle to have signed prekey, signature of signed prekey
-            //and one time prekey
-            //User user, Key IKO, Key SPKO, Key signedPrekeyO, Key OPKO
+
             byte[] AD = one.k.concat(bundle1.identity.getEncoded(), bundle2.identity.getEncoded());
+            Log.i("IDK", "AD for alice is: " + AD);
             int[] identifiers = new int[2];
             identifiers[0] = 1;
             identifiers[1] = 1;//apprently use both
             byte[] text = "Hello, let's start a session!".getBytes();
             byte[] ciphertext = one.encryptInitialMessage(secret, text, AD);
+            Log.i("IDK", "ciphertext of intitial message: "+ ciphertext);
             byte[] initialMessageFromAlice = one.k.initialMessage(bundle1.identity, bundle2.identity, one.ephemeral.getPublic(), identifiers, ciphertext);
+            Log.i("IDK", "inititial message from alice: " + initialMessageFromAlice);
             byte[] initialMessage = null;
             byte[] decryptedInitialMessage = null;
             byte[] IKAForB = new byte[32];
@@ -389,9 +389,11 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             for(int i = 0; i < 32; i++){
                 IKAForB[i] = initialMessageFromAlice[i];
             }
+            Log.i("IDK", "IKAforB: " + IKAForB);
             for(int i = 32; i < 65; i++){
                 EKAForB[i-32] = initialMessageFromAlice[i];
             }
+            Log.i("IDK", "EKAForB: " + EKAForB);
             for(int i = 65; i < 73; i++){
                 ids[i-65] = initialMessageFromAlice[i];
             }
@@ -405,28 +407,29 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             }
             for(int i = 4; i < 8; i++){
                 ids2[i-4] = ids[i];
-            }//technically only need one prekey and just it to make signature
-            //signature: initSign with private key, then update with bytes, then sign for signature,
-            //init verfiy using public key, verify signature
-            //so maybe dont need to pass ranodm stuff
-            //pass the public key of what you signed and the bytes associated with it??
+            }
             id2 = ByteBuffer.wrap(ids2).getInt();
+            Log.i("IDK", "id2: " + id2);
             id = ByteBuffer.wrap(ids1).getInt();
+            Log.i("IDK", "id: " + id);
             //SecretKey ika = new SecretKeySpec(IKAForB,  "ECDH");
             KeyFactory keyFactory = KeyFactory.getInstance("DH");
             EncodedKeySpec keySpec = new X509EncodedKeySpec(IKAForB);
             PublicKey ikaKey = keyFactory.generatePublic(keySpec);
+            Log.i("IDK", "ikaKey: " + ikaKey);
             /*SecretKeyFactory factory = SecretKeyFactory.getInstance("EC");
             SecretKey ika = factory.*/
             //SecretKey eka = new SecretKeySpec(EKAForB,  "ECDH");
             EncodedKeySpec keySpeceka = new X509EncodedKeySpec(EKAForB);
+            Log.i("IDK", "keySpecka: " + keySpeceka);
             PublicKey ekaKey = keyFactory.generatePublic(keySpeceka);
             Key secret2 = two.calculateSecretKey(ikaKey, bundle1.prekey, bundle1.getSignedPreKey().getEncoded(), bundle1.getSpecificPreKey(id));
+            Log.i("IDK", "secret2: " + secret2);
             byte[] AD2 =  two.k.concat(bundle1.identity.getEncoded(), bundle2.identity.getEncoded());
+            Log.i("IDK", "AD for Bob: " + AD2);
             decryptedInitialMessage = two.decryptInitialMessage(secret2, initialMessage, AD2);
             Log.i("IDK", "Initial Message in string: " + decryptedInitialMessage.toString());
-            //how to check if actually decrypted
-            //maybe add button for does this make sense??
+
             //delete any prekey used
             Key pub = bundle2.identity;
             KeyPair priv = realBundle2.identity;
@@ -435,23 +438,6 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
 
             one.updateUserForRatchetStart(state1, secret, pub, sharedHeaderKey, sharedNextHeaderKey);
             two.updateUserFOrRatchetSecond(state2, secret, priv, sharedHeaderKey, sharedNextHeaderKey);
-            //Okay so get key bundle, A verifies prekey signature and generates
-            //ephemeral key pair EKA if it if works, then do calculate secret key,
-            //after, A deletes ephemeral private key, calculates associated data
-            //which is AD = encoded(IKA) concated to encode(IKB)
-            //A sends messages containing IKA, EKA, identifiers saying which of B's prekeys
-            //used, and initial ciphertext encrypted using AEAD
-            //so 32, 32, how many for prekeys, and whatevers left is ciphertext
-
-            //When B gets message, B gets the two keys from message and loads B's
-            //identity private key, and private keys correpsodnign to signed prekey and one
-            //time prekey A used
-            //Using these, B repeats DH and KDF calculations from previous section
-            //to derive SK and deletes DH values
-            //B then does the AD sequence again
-            //finally B decrypts ciphertext using SK and AD. If fails, abort protocol
-            //If it does decrypt correctly, then B deletes one-time prekey pruvate key, then everyone
-            //can continue using SK to send messages
 
             String message1 = "Hello World!";
             String message2 = "World says hello!";

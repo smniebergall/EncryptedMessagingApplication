@@ -276,11 +276,13 @@ public class User {
 
     public byte[] encryptInitialMessage(Key key, byte[] text, byte[] AD){
         byte[] ciphertext = k.encrypt(key, text, AD);
+        Log.i("IDK", "users encrypt intial message, ciphertext "+ ciphertext);
         return ciphertext;
     }
 
     public byte[] decryptInitialMessage(Key key, byte[] ciphertext, byte[] AD){
         byte[] plaintext = k.decrypt(key, ciphertext, AD);
+        Log.i("IDK", "users decrypt initial message, plaintext: "+ plaintext);
         return plaintext;
     }
 

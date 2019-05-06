@@ -45,65 +45,12 @@ public class KeyAgreement {
         // to represent the type of curve, followed by little-endian encoding
         // of the u-coordinate as specified in [1].
     }
-    //DH(PK1, PK2) represents a byte sequence which is the shared secret output
-    // from an Elliptic Curve Diffie-Hellman function involving the key pairs
-    // represented by public keys PK1 and PK2.
-
-    //Sig(PK, M) represents a byte sequence that is an XEdDSA signature on the byte
-    // sequence M and verifies with public key PK, and which was created by signing
-    // M with PK's corresponding private key. The signing and verification functions
-    // for XEdDSA are specified in[2].
-
-    //for kdf, should i bed doing multiple kdfs?? or do the output of 80
-    //and chop into keys??
-
-    //IKA alices identity
-    //EKA alices ephemeralkey
-    //IKB bobs identity
-    //SPKB bobs signed prekey
-    //OPKB bobs one time prekey
-    //all keys must be within x25519 for this protocol X3DH
-
-    //Each party has a long-term identity public key (IKA for Alice, IKB for Bob).
-    //Bob also has a signed prekey SPKB, which he will change periodically, and a
-    // set of one-time prekeys OPKB, which are each used in a single X3DH protocol
-    //run. ("Prekeys" are so named because they are essentially protocol messages
-    // which Bob publishes to the server prior to Alice beginning the protocol run).
-    //During each protocol run, Alice generates a new ephemeral key pair with public
-    // key EKA.
-    //After a successful protocol run Alice and Bob will share a 32-byte secret key
-    // SK.
-
-    //Step 1: Alice gets prekey bundle from server. Serve gives one of the one-time
-    //prekeys and then deletes it. If there isnt one, no one time prekey is given
-    //ALice verifies prekey signature and if it works then creates EKA key pair
-    //if no one-time prekey:
-    //DH1 = DH(IKA, SPKB); DH2 = DH(EKA, IKB); DH3 = DH(EKA, SPKB);
-    //SK = KDF(DH1 || DH2 || DH3)
-    //if there is a prekey:
-    //add additional DH4 = DH(EKA, OPKB); SK includes DH4 at end
-    //then ephemeral private key for Alice is deleted and DH outputs.
-
-    //alice creates associated data byte sequence AD=encode(IKA) || encode(IKB)
-    //Step 2: alice sends Bob message containing A's IKA, EKA, identifiers saying
-    //which B's prekeys ALice used, an initial encrypted ciphertext using AEAD
-    //encryption scheme using AD and encryption key of either SK or output
-    //from some cryptographic PRF keyed by SK
-
-    //A can continue using SK or keys derived from SK to communicate
     public Key calculateSecretKey(User user, Key IKO, Key SPKO, byte[] signedPrekeyO, Key OPKO){
         //verify prekeysignature
         //then generate ephemeral here if verified
         //otherwise abort
         Log.i("IDK", "In key agreement calculate ");
-        /*Log.i("IDK", "DH SPKO: " + SPKO.getClass());//SecretKeySpec, signedPrekey
-        Log.i("IDK", "DH OPKO: " + OPKO.getClass());//ECPublic, pickedPreKey
-        Log.i("IDK", "DH IKO: " + IKO.getClass());//ECPrivate?*/
-        //maybe see if you can make ECDH keys??
         user.generateNewEphemeral();
-        /*PublicKey ikopub = (DHPublicKey)IKO;
-        PublicKey spkopub = (DHPublicKey)SPKO;
-        PublicKey opkopub = (DHPublicKey)OPKO;*/
         Key dh1 = null;
         Key dh2 = null;
         Key dh3 = null;
@@ -112,6 +59,7 @@ public class KeyAgreement {
             //bundle2.identity, bundle2.signedPreKey, bundle2.signedPreKeyBytes, bundle2.pickPrekeyToSend()
             //this, IdentityOtherPub, SignedPreKeyOtherPub, signatureOfPreKeyOtherPub, oneTimePreKeyOtherpub
             dh1 = DH(user.actualBundle.identity, SPKO);//idnetity is considered null object??
+            Log.i("IDK","In calcuate secret key, dh1: " + dh1.getEncoded());
         }catch(Exception e){
             Log.i("IDKERRORdh1", e.toString());
         }
@@ -120,11 +68,13 @@ public class KeyAgreement {
         Log.i("IDK", "key agreement ephemeral: " + user.ephemeral);
         try{
             dh2 = DH(user.ephemeral, IKO);
+            Log.i("IDK","In calcuate secret key, dh2: " + dh2.getEncoded());
         }catch(Exception e){
             Log.i("IDKERRORdh2", e.toString());
         }
         try{
             dh3 = DH(user.ephemeral, SPKO);
+            Log.i("IDK","In calcuate secret key, dh3: " + dh3.getEncoded());
         }catch(Exception e){
             Log.i("IDKERRORdh3", e.toString());
         }
@@ -133,19 +83,25 @@ public class KeyAgreement {
         if(OPKO != null){
             try{
                 dh4 = DH(user.ephemeral, OPKO);
-            }catch(Exception e){
-                Log.i("IDKERRORdh3", e.toString());
-                byte[] concated = concat(concat(concat(dh1.getEncoded(), dh2.getEncoded()), dh3.getEncoded()), dh4.getEncoded());
+                Log.i("IDK","In calcuate secret key, dh4: " + dh4.getEncoded());
+                byte[] concated = concat(concat(concat(dh1.getEncoded(), dh2.getEncoded()), dh3.getEncoded()), dh4.getEncoded());//error index out of bound??
+                Log.i("IDK", "in calculate secret key, concated for 4 dh's: " + concated);//wrong place now moved
+                //so why in DH is a null??
                 secret = KDF(concated);
+            }catch(Exception e){
+                Log.i("IDKERRORdh4", e.toString());
+
             }
             //maybe change ephemeral to actual key bundle??
         }
         else
         {
             byte[] concated = concat(concat(dh1.getEncoded(), dh2.getEncoded()), dh3.getEncoded());
+            Log.i("IDK", "in calculate secret key, concated for 3 dh's: " + concated);
             secret = KDF(concated);
         }
         Log.i("IDK", "In calculateSecretKey");
+        Log.i("IDK", "In calculate secret key, secret: "+ secret);
         return secret;
     }
     public byte[] initialMessage(Key IKA, Key IKB, Key EKA, int[] identifiers, byte[] ciphertext){
@@ -250,10 +206,10 @@ public class KeyAgreement {
              //First is SecretKeySPec, then ECPrivateKey, then SecretKeySPec, then ECPublicKey
              //SPKO, IKO, and OPKO are the problem
              //
-             Log.i("IDK", "In DH, pair.private : " + pair.getPrivate());
+             Log.i("IDK", "In DH, pair.private() : " + pair.getPrivate());
              Log.i("IDK", "In DH, public key : " + pub);
              agree.init(pair.getPrivate());
-             a = agree.doPhase(pub, true);
+             a = agree.doPhase(pub, true);//why odes this return null??
              k = agree.generateSecret("ECDH");
              Log.i("IDK", "Finish DH, a : " + a);
              Log.i("IDK", "Finish DH, k secret key : " + k);
@@ -268,14 +224,7 @@ public class KeyAgreement {
 
      public Pair<Key, Key> KDF_CK(Key chain){
         Pair<Key, Key> k = null;
-        //need to turn string chain key into speicific kind of key like SecretKeySpec
-         //new SecretKeySPec(key.getBytes("UTF-8"), "AES") for example
-         //so elliptic version?
-         //byte[] chains =
          try{
-             //HMAC SHA256
-             //chain key as HMAC key and separate input
-             //0x01 for message key and 0x02 for next chian key
              Mac HMAC_SHA256 = Mac.getInstance("HmacSHA256");
              HMAC_SHA256.init(chain);
              byte[] messageKey;
@@ -297,14 +246,6 @@ public class KeyAgreement {
          }catch(GeneralSecurityException e){
              Log.i("IDKERRORKDFCK", e.toString());
          }
-
-         //Mac mac = Mac.getInstance("HmacSHA1");
-        //wrap and unwrap keys when sending them
-        //(32-byte chain key, 32-byte message key);
-         //applying KDF keyed by a 32 byte chian key to come constant
-         //HMAC, chain key as HMAC key and using separate constants as input
-         //like 0x01 as input to produce message key,a nd 0x02 to produce
-         //next chain key
         return k;
      }
 
@@ -312,6 +253,7 @@ public class KeyAgreement {
          byte[] bytes = null;
          try{
              //spongy castle does HKDF
+             Log.i("IDK", "In encrypt");
             byte[] salt = new byte[80];
             byte[] info;
             String s = "info for HKDF";
@@ -325,10 +267,10 @@ public class KeyAgreement {
             byte[] encryptionKey = new byte[32];
             byte[] authKey = new byte[32];
             byte[] IV = new byte[16];//is this correct order?
-            for(int i = 0; i < 31; i++){
+            for(int i = 0; i < 32; i++){
                 encryptionKey[i] = result[i];//fix the arrays 0-32, 32-64, 64-80
             }
-            for(int i = 32; i < 63; i++){
+            for(int i = 32; i < 64; i++){
                 authKey[i] = result[i];
             }
             for(int i = 64; i < result.length-1; i++){
@@ -347,7 +289,7 @@ public class KeyAgreement {
              bytes = new byte[hmac.length+encrypted.length];
              System.arraycopy(encrypted, 0, bytes, 0, encrypted.length);
              System.arraycopy(hmac, 0, bytes, encrypted.length, hmac.length);
-             Log.i("IDK", "In encrypt");
+             Log.i("IDK", "Finish encrypt");
          }catch(GeneralSecurityException e){
              Log.i("IDKERRORencrypt", e.toString());
          }
@@ -356,6 +298,7 @@ public class KeyAgreement {
 
      public byte[] decrypt(Key messageKey, byte[] cipherText, byte[] data){
         byte[] bytes = null;
+         Log.i("IDK", "In decrypt");
         SecureRandom s = new SecureRandom();
         IvParameterSpec IV;
         byte[] ivBytes = new byte[16];
@@ -378,6 +321,7 @@ public class KeyAgreement {
         }catch(GeneralSecurityException e){
             Log.i("IDKERRORdecrypt", e.toString());
         }
+         Log.i("IDK", "Finish decrypt");
         return bytes;
      }
 
@@ -509,13 +453,15 @@ public class KeyAgreement {
      }
      public byte[] concat(byte[] seq, byte[] header){
         byte[] s = new byte[header.length+seq.length];
-        for(int i = 0; i < seq.length; i++){
+        System.arraycopy(seq, 0, s , 0, seq.length);
+        System.arraycopy(header, 0, s, seq.length, header.length);
+        /*for(int i = 0; i < seq.length; i++){
             s[i] = seq[i];
 
         }
         for(int j = seq.length; j < header.length+seq.length; j++){
-            s[j] = header[j-header.length];
-        }
+            s[j] = header[j-header.length];//maybe this wrong??
+        }*/
         return s;
      }
     //to retrieve info from firebase...
