@@ -264,31 +264,41 @@ public class KeyAgreement {
             hkdf.init(params);
             byte[] result = new byte[80];
             hkdf.generateBytes(result, 0,80);
+             Log.i("IDK", "In encrypt, result: " + result);
             byte[] encryptionKey = new byte[32];
             byte[] authKey = new byte[32];
             byte[] IV = new byte[16];//is this correct order?
             for(int i = 0; i < 32; i++){
                 encryptionKey[i] = result[i];//fix the arrays 0-32, 32-64, 64-80
             }
+             Log.i("IDK", "In encrypt, encryptionKey bytes: " + encryptionKey);
             for(int i = 32; i < 64; i++){
                 authKey[i] = result[i];
             }
+             Log.i("IDK", "In encrypt, authKey bytes: " + authKey);
             for(int i = 64; i < result.length-1; i++){
                 IV[i] = result[i];
             }
+             Log.i("IDK", "In encrypt, IV bytes: " + IV);
              Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");//change to PCKS7Padding
              //from bouncy castle??
              IvParameterSpec iv = new IvParameterSpec(IV);
+             Log.i("IDK", "In encrypt, iv spec: " + iv);
              SecretKeySpec encKey = new SecretKeySpec(encryptionKey, "HMAC_SHA256");
+             Log.i("IDK", "In encrypt, encKey: " + encKey);
              SecretKeySpec aKey = new SecretKeySpec(authKey, "HMAC_SHA256");//Is this right??
+             Log.i("IDK", "In encrypt, aKey: " + aKey);
              cipher.init(Cipher.ENCRYPT_MODE, encKey, iv);
              byte[] encrypted = cipher.doFinal(plainText);
+             Log.i("IDK", "In encrypt, encrypted: " + encrypted);
              Mac mac = Mac.getInstance("HmacSHA256");
              mac.init(aKey);
              byte[] hmac = mac.doFinal(concat(data, encrypted));
+             Log.i("IDK", "In encrypt, hmac: " + hmac);
              bytes = new byte[hmac.length+encrypted.length];
              System.arraycopy(encrypted, 0, bytes, 0, encrypted.length);
              System.arraycopy(hmac, 0, bytes, encrypted.length, hmac.length);
+             Log.i("IDK", "In encrypt, bytes: " + bytes);
              Log.i("IDK", "Finish encrypt");
          }catch(GeneralSecurityException e){
              Log.i("IDKERRORencrypt", e.toString());
@@ -304,17 +314,21 @@ public class KeyAgreement {
         byte[] ivBytes = new byte[16];
         s.nextBytes(ivBytes);
         IV = new IvParameterSpec(ivBytes);
+         Log.i("IDK", "In decrypt, IV: "+ IV);
         try{
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, messageKey, IV);
             byte[] decrypted = cipher.doFinal(cipherText);
+            Log.i("IDK", "In decrypt, decrypted: "+ decrypted);
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(messageKey);
             byte[] hmac = mac.doFinal(concat(data, decrypted));
+            Log.i("IDK", "In decrypt, hmac: "+ hmac);
             bytes = new byte[hmac.length+decrypted.length];
             System.arraycopy(decrypted, 0, bytes, 0, decrypted.length);
             System.arraycopy(hmac, 0, bytes, decrypted.length, hmac.length);
-            Log.i("IDK", "In decrypt");
+            Log.i("IDK", "In decrypt, bytes: "+ bytes);
+            Log.i("IDK", "Finish decrypt");
             //if authentictaion fails, exception is raised
             //but what is associated data and hwo does authentication fail
             //it has to match something right?? what??
