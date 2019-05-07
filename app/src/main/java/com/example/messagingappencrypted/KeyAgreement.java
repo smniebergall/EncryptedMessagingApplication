@@ -105,8 +105,21 @@ public class KeyAgreement {
         return secret;
     }
     public byte[] initialMessage(Key IKA, Key IKB, Key EKA, int[] identifiers, byte[] ciphertext){
-        byte[] bytes = null;
-        bytes = concat(concat(concat(IKA.getEncoded(), EKA.getEncoded()), ByteBuffer.allocate(1).putInt(identifiers[0]).array()), ciphertext);
+        Log.i("IDK", "in initial in key agreement");
+        byte[] bytes = new byte[IKA.getEncoded().length+EKA.getEncoded().length+ByteBuffer.allocate(8).putInt(identifiers[0], identifiers[1]).array().length+ciphertext.length];
+        //doesnt like putInt?? and Buffer.nextPutIndex
+        byte[] first = concat(IKA.getEncoded(), EKA.getEncoded());
+        Log.i("IDK", "in initial in key agreement, finisheed first concat, length: " + first.length);
+        //Log.i("IDK", "Initial message, bytes length: " + first.length+ciphertext.length);
+        //Log.i("", "");//mayeb use bytebuffer????
+        byte[] ids = ByteBuffer.allocate(8).putInt(identifiers[0], identifiers[1]).array();//4 instead of 1??
+        Log.i("IDK", "initial message, ids: " + ids.length);
+        byte[] second = concat(first, ids);//buffer overflow
+        Log.i("IDK", "in initial in key agreement, finisheed second concat, length: " + second.length);
+        bytes = concat(second, ciphertext);//buffer overflow, maybe split up concats?
+        Log.i("IDK", "in initial in key agreement, finisheed last concat, length: " + bytes.length);
+        //maybe too large of array??
+        Log.i("IDK", "Initial message, bytes length: " + second.length+ciphertext.length);
         return bytes;
     }
     public Key KDF(byte[] seq){
@@ -251,6 +264,7 @@ public class KeyAgreement {
 
      public byte[] encrypt(Key messageKey, byte[] plainText, byte[] data){
          byte[] bytes = null;
+         Log.i("IDK", "In encypt, before try");
          try{
              //spongy castle does HKDF
              Log.i("IDK", "In encrypt");
@@ -268,16 +282,23 @@ public class KeyAgreement {
             byte[] encryptionKey = new byte[32];
             byte[] authKey = new byte[32];
             byte[] IV = new byte[16];//is this correct order?
+             int count = 0;
+             for(int i = 0; i < result.length; i++){//delete this after debugging
+                 if (result[i] != 0){
+                     count++;
+                 }
+             }
+             Log.i("IDK", "In encrypt, count of result: " + count);
             for(int i = 0; i < 32; i++){
                 encryptionKey[i] = result[i];//fix the arrays 0-32, 32-64, 64-80
             }
              Log.i("IDK", "In encrypt, encryptionKey bytes: " + encryptionKey);
             for(int i = 32; i < 64; i++){
-                authKey[i] = result[i];
+                authKey[i-32] = result[i];//index out of bounds
             }
-             Log.i("IDK", "In encrypt, authKey bytes: " + authKey);
-            for(int i = 64; i < result.length-1; i++){
-                IV[i] = result[i];
+             Log.i("IDK", "In encrypt, authKey bytes: " + authKey);//doesnt get to here
+            for(int i = 64; i < result.length; i++){
+                IV[i-64] = result[i];
             }
              Log.i("IDK", "In encrypt, IV bytes: " + IV);
              Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");//change to PCKS7Padding
@@ -469,13 +490,6 @@ public class KeyAgreement {
         byte[] s = new byte[header.length+seq.length];
         System.arraycopy(seq, 0, s , 0, seq.length);
         System.arraycopy(header, 0, s, seq.length, header.length);
-        /*for(int i = 0; i < seq.length; i++){
-            s[i] = seq[i];
-
-        }
-        for(int j = seq.length; j < header.length+seq.length; j++){
-            s[j] = header[j-header.length];//maybe this wrong??
-        }*/
         return s;
      }
     //to retrieve info from firebase...
@@ -492,7 +506,7 @@ public class KeyAgreement {
     //TO retrieve data, use Query q =...
     public Pair ratchetEncrypt(State state, String plainText, byte[] associatedData){
         Key messageKey;
-        Pair<Header, byte[]> k;//header key or string? byte[]??
+        Pair<Header, byte[]> k;
         Pair<Key, Key> pair = KDF_CK(state.chainKeyReceiving);
         state.chainKeyReceiving = pair.second;
         messageKey = pair.first;

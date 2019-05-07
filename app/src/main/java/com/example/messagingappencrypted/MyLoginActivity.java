@@ -377,11 +377,11 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             Log.i("IDK", "ciphertext of intitial message: "+ ciphertext);
             byte[] initialMessageFromAlice = one.k.initialMessage(bundle1.identity, bundle2.identity, one.ephemeral.getPublic(), identifiers, ciphertext);
             Log.i("IDK", "inititial message from alice: " + initialMessageFromAlice);
-            byte[] initialMessage = null;
-            byte[] decryptedInitialMessage = null;
+            byte[] initialMessage = new byte[initialMessageFromAlice.length-71];
+            byte[] decryptedInitialMessage; //= new byte[];
             byte[] IKAForB = new byte[32];
             byte[] EKAForB = new byte[32];
-            byte[] ids = new byte[4];
+            byte[] ids = new byte[8];//changed to 8
             int id;
             int id2;
             //if initialMessageFromAlice is 78
@@ -390,15 +390,15 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
                 IKAForB[i] = initialMessageFromAlice[i];
             }
             Log.i("IDK", "IKAforB: " + IKAForB);
-            for(int i = 32; i < 65; i++){
+            for(int i = 32; i < 64; i++){//changed these
                 EKAForB[i-32] = initialMessageFromAlice[i];
             }
             Log.i("IDK", "EKAForB: " + EKAForB);
-            for(int i = 65; i < 73; i++){
-                ids[i-65] = initialMessageFromAlice[i];
+            for(int i = 64; i < 72; i++){
+                ids[i-64] = initialMessageFromAlice[i];//I was assuming 1 int, but seems like two ints?
             }
-            for(int i = 73; i < initialMessageFromAlice.length; i++){
-                initialMessage[i-73] = initialMessageFromAlice[i];
+            for(int i = 71; i < initialMessageFromAlice.length; i++){
+                initialMessage[i-71] = initialMessageFromAlice[i];
             }
             byte[] ids1 = new byte[4];
             byte[] ids2 = new byte[4];

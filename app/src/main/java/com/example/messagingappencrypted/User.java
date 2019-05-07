@@ -275,6 +275,7 @@ public class User {
     }
 
     public byte[] encryptInitialMessage(Key key, byte[] text, byte[] AD){
+        Log.i("IDK", "In users encrypt initial");
         byte[] ciphertext = k.encrypt(key, text, AD);
         Log.i("IDK", "users encrypt intial message, ciphertext "+ ciphertext);
         return ciphertext;
