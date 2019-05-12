@@ -336,12 +336,16 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             //ECParameterSpec ecSpec = parameters.getParameterSpec(ECParameterSpec.class);
             //ECPublicKeySpec ecPublicKey = new ECPublicKeySpec(new ECPoint(new BigInteger(x), new BigInteger(y)), ecSpec);
             //given byt[] of size 33, first byte is 04, next 32 is x, next 32 is y
+
+            //ecprivatekey to byte[] and back
+            byte[] array1Priv = priv1.getS().toByteArray();//i think this turns private key into byte array??
+            //and probbaly take byte array and cast it to ECPrivateKey??
             Log.i("IDK","pub1Bytes length: " + pub1Bytes.length);
             Log.i("IDK","pub1Bytes length with 04: " + pub1BytesUncompressed.length);
             //byte[] privBytes = one.k.concat();
             //byte[] pubBytes = point;
             //Key pub1 = pair1.getPublic();
-            Log.i("IDK", "pair private length: " + priv1);//138 length//
+            Log.i("IDK", "pair private length: " + array1Priv.length);//138 length//
 
             Log.i("IDK", "pair public length: "+ pub1.getEncoded().length);//91 length//length still says this, still need to change to 32 byte for encoded
 
