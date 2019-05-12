@@ -13,7 +13,9 @@ import java.security.Key;
 import java.security.KeyPair;
 import java.security.Signature;
 import java.security.*;
+import java.security.spec.ECGenParameterSpec;
 import java.security.spec.KeySpec;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -22,7 +24,9 @@ import java.util.Objects;
 import org.spongycastle.crypto.digests.SHA256Digest;
 import org.spongycastle.crypto.generators.HKDFBytesGenerator;
 import org.spongycastle.crypto.params.HKDFParameters;
+import org.spongycastle.jce.interfaces.ECKey;
 import org.spongycastle.jce.interfaces.ECPublicKey;
+import org.spongycastle.util.encoders.Base64;
 
 import javax.crypto.Cipher;
 import javax.crypto.*;
@@ -39,11 +43,12 @@ public class KeyAgreement {
 
     }
     public byte[] encode(Key pub){
-        return pub.getEncoded();
-        //pub.g
+
         //The recommended encoding consists of some single-byte constant
         // to represent the type of curve, followed by little-endian encoding
         // of the u-coordinate as specified in [1].
+        byte[] bytes = null;
+        return bytes;
     }
     public Key calculateSecretKey(User user, Key IKO, Key SPKO, byte[] signedPrekeyO, Key OPKO){
         //verify prekeysignature
@@ -106,6 +111,11 @@ public class KeyAgreement {
     }
     public byte[] initialMessage(Key IKA, Key IKB, Key EKA, int[] identifiers, byte[] ciphertext){
         Log.i("IDK", "in initial in key agreement");
+        Log.i("IDK", "IKA length: " + IKA.getEncoded().length);//91//this is null somehow??//this says length of null array?
+        Log.i("IDK", "IKa : " + IKA.getAlgorithm());
+        Log.i("IDK", "EKA length: " + EKA.getEncoded().length);//91//defintley not base64 get enocded
+        //ECGenParameterSpec ecParam = new ECGenParameterSpec("secp224k1");
+        //rewrite ec keys, maybe store as strings instead of bytes everywhere??
         byte[] bytes = new byte[IKA.getEncoded().length+EKA.getEncoded().length+ByteBuffer.allocate(8).putInt(identifiers[0], identifiers[1]).array().length+ciphertext.length];
         //doesnt like putInt?? and Buffer.nextPutIndex
         byte[] first = concat(IKA.getEncoded(), EKA.getEncoded());
@@ -113,7 +123,7 @@ public class KeyAgreement {
         //Log.i("IDK", "Initial message, bytes length: " + first.length+ciphertext.length);
         //Log.i("", "");//mayeb use bytebuffer????
         byte[] ids = ByteBuffer.allocate(8).putInt(identifiers[0], identifiers[1]).array();//4 instead of 1??
-        Log.i("IDK", "initial message, ids: " + ids.length);
+        Log.i("IDK", "initial message, ids: " + ids.length);//8
         byte[] second = concat(first, ids);//buffer overflow
         Log.i("IDK", "in initial in key agreement, finisheed second concat, length: " + second.length);
         bytes = concat(second, ciphertext);//buffer overflow, maybe split up concats?
@@ -153,6 +163,7 @@ public class KeyAgreement {
 
     public byte[] sig(KeyPair pair, byte[] message){
         byte[] bytes = new byte[30];
+
         Log.i("IDK", "In isg before the try catch");
         Log.i("IDK", "Public: " + pair.getPublic().toString());
         Log.i("IDK", "Private: " + pair.getPrivate().toString());
@@ -162,8 +173,7 @@ public class KeyAgreement {
             Signature signature = Signature.getInstance("SHA256withECDSA");
             signature.initSign(pair.getPrivate());
             signature.update(message);
-            bytes = signature.sign();//messed up signature!!
-            //bytes length is 0??
+            bytes = signature.sign();//length of 71??
             Log.i("IDK", "Key sign finished: ");
             Log.i("IDK", "Key sign finished, bytes: " + bytes);
             Log.i("IDK", "Key sign finished, bytes length: " + bytes.length);
@@ -320,6 +330,7 @@ public class KeyAgreement {
              System.arraycopy(encrypted, 0, bytes, 0, encrypted.length);
              System.arraycopy(hmac, 0, bytes, encrypted.length, hmac.length);
              Log.i("IDK", "In encrypt, bytes: " + bytes);
+             Log.i("IDK", "In encrypt, bytes length: " + bytes.length);
              Log.i("IDK", "Finish encrypt");
          }catch(GeneralSecurityException e){
              Log.i("IDKERRORencrypt", e.toString());
@@ -336,9 +347,11 @@ public class KeyAgreement {
         s.nextBytes(ivBytes);
         IV = new IvParameterSpec(ivBytes);
          Log.i("IDK", "In decrypt, IV: "+ IV);
+         Log.i("IDK", "ciphertext length: " + cipherText.length);
         try{
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, messageKey, IV);
+            //byte[] tryArray = Arrays.copyOf(cipherText, 176);//try truncating??
             byte[] decrypted = cipher.doFinal(cipherText);
             Log.i("IDK", "In decrypt, decrypted: "+ decrypted);
             Mac mac = Mac.getInstance("HmacSHA256");

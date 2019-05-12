@@ -7,6 +7,7 @@ import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.spec.ECGenParameterSpec;
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Enumeration;
@@ -35,7 +36,8 @@ public class User {
         KeyPair key = null;
         try{
             KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
-            key = generator.generateKeyPair();
+            generator.initialize(new ECGenParameterSpec("secp256r1"));
+            key = generator.generateKeyPair();//was null for some reason, added curve hopefully not null now
         }catch(GeneralSecurityException e){
 
         }
@@ -309,6 +311,3 @@ public class User {
     //who does ratchet decrypt
 
 }
-//double ratchet used to exchange encrypted messages on a shared secret key
-//X3DH makes the secret key to exchange messages
-//signature schemes
