@@ -308,11 +308,10 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");//does this actally work, shuld be 25519
             Log.i("IDK", "IN try!!");
            generator.initialize(new ECGenParameterSpec("secp256r1"));//256//nist p-256//x9.62 prime256v1
-            //do i need to worry about 33 byte EC key to 32 byte key??
-            //this causes actual multiples of 16
-            //in sign, it's still 256 bit
-            //but bytes of signed is 71 for some reason
-            //initial message is 238??
+            String ID = "one";
+            String ID2 = "two";
+            User one = new User(ID);
+            User two = new User(ID2);
             KeyPair pair1 = generator.generateKeyPair();
             //Key priv1 = pair1.getPrivate();
             //Key priv1 = pair1.getPrivate();
@@ -324,15 +323,26 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             BigInteger x = new BigInteger(1, Arrays.copyOfRange(pub1.getEncoded(), offset, offset+keySize));
             offset += keySize;
             BigInteger y = new BigInteger(1, Arrays.copyOfRange(pub1.getEncoded(), offset, offset+keySize));
-            ECPoint point = new ECPoint(x,y);
+            ECPoint point = new ECPoint(x,y);//so maybe dont need this or above
+            ECPoint pub1Point = pub1.getW();
+            //ECPoint priv1Point = priv1;
+            byte[] array = pub1Point.getAffineX().toByteArray();
+            byte[] array2 = pub1Point.getAffineY().toByteArray();//if you put 04 at beginnig then it meas uncompressed form
+            byte[] pub1Bytes = one.k.concat(array, array2);//do i need to add Bytes.byt("04") at beginning??
+            byte[] pub1BytesUncompressed = one.k.concat("04".getBytes(), pub1Bytes);
+            //change all other keys to this representation for getting to bytes and back
+            //and private version
+            //to turn back, use ECParameterSpec??
+            //ECParameterSpec ecSpec = parameters.getParameterSpec(ECParameterSpec.class);
+            //ECPublicKeySpec ecPublicKey = new ECPublicKeySpec(new ECPoint(new BigInteger(x), new BigInteger(y)), ecSpec);
+            //given byt[] of size 33, first byte is 04, next 32 is x, next 32 is y
+            Log.i("IDK","pub1Bytes length: " + pub1Bytes.length);
+            Log.i("IDK","pub1Bytes length with 04: " + pub1BytesUncompressed.length);
+            //byte[] privBytes = one.k.concat();
             //byte[] pubBytes = point;
             //Key pub1 = pair1.getPublic();
             Log.i("IDK", "pair private length: " + priv1);//138 length//
-            //BigInteger x = new BigInteger(1, Arrays.copyOfRange(pubKey, offset(0), offset+))
-            //Log.i("IDK", "pair private length of privatekey: " + priv1.getEncoded().length);
-            //Log.i("IDK", "pair private length string: " + priv1.toString().getBytes().length);//58?
 
-            //Key pub1 = pair1.getPublic();
             Log.i("IDK", "pair public length: "+ pub1.getEncoded().length);//91 length//length still says this, still need to change to 32 byte for encoded
 
             //Log.i("IDK", "pair public length string: "+ pub1.toString().getBytes().length);//402
@@ -356,10 +366,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             /*//String ID = ChatSDK.currentUserID();
             //String ID2 = ChatSDK.currentUserID();
             //thinks the above two are still active and not commented out??*/
-            String ID = "one";
-            String ID2 = "two";
-            User one = new User(ID);
-            User two = new User(ID2);
+
             Log.i("IDK", "IN try!! Created users!");
             byte[] signedPrekey1 = new byte[32];
             signedPrekey1 = one.signPreKey(pair1, prekey1.getEncoded());//null object reference in here to signPreKey

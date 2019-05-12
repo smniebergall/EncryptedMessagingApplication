@@ -25,6 +25,7 @@ import org.spongycastle.crypto.digests.SHA256Digest;
 import org.spongycastle.crypto.generators.HKDFBytesGenerator;
 import org.spongycastle.crypto.params.HKDFParameters;
 import org.spongycastle.jce.interfaces.ECKey;
+import org.spongycastle.jce.interfaces.ECPrivateKey;
 import org.spongycastle.jce.interfaces.ECPublicKey;
 import org.spongycastle.util.encoders.Base64;
 
@@ -42,13 +43,26 @@ public class KeyAgreement {
     public KeyAgreement(){
 
     }
-    public byte[] encode(Key pub){
+    public byte[] encodePub(ECPublicKey pub){
 
         //The recommended encoding consists of some single-byte constant
         // to represent the type of curve, followed by little-endian encoding
         // of the u-coordinate as specified in [1].
         byte[] bytes = null;
         return bytes;
+    }
+    public byte[] encodePriv(ECPrivateKey key){
+        byte[] bytes = null;
+        return bytes;
+    }
+    public ECPublicKey decode(byte[] bytes){
+        ECPublicKey key = null;
+        return key;
+    }
+
+    public ECPrivateKey decodePrivate(byte[] bytes){
+        ECPrivateKey key = null;
+        return key;
     }
     public Key calculateSecretKey(User user, Key IKO, Key SPKO, byte[] signedPrekeyO, Key OPKO){
         //verify prekeysignature
