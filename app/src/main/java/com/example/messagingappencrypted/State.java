@@ -4,6 +4,7 @@ import android.util.Pair;
 
 import java.security.Key;
 import java.security.KeyPair;
+import java.security.interfaces.ECPublicKey;
 import java.util.Dictionary;
 import java.util.List;
 import java.util.Map;

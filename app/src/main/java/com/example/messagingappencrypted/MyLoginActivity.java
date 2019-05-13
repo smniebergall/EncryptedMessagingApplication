@@ -225,28 +225,6 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
         authenticateWithDetails(details);
         try {
             KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");//does this actally work
-            /*generator.initialize(256);//what size??
-            //do i need to worry about 33 byte EC key to 32 byte key??
-            KeyPair pair = generator.generateKeyPair();
-            Key priv = pair.getPrivate();
-            Key pub = pair.getPublic();
-            List<KeyPair> realPrekeys = new ArrayList<KeyPair>();
-            for(int i = 0; i < 10; i++){
-                realPrekeys.add(generator.generateKeyPair());
-            }
-            List<Key> prekeys = new ArrayList<Key>();
-            for(int i = 0; i < realPrekeys.size();i++){
-                prekeys.add(realPrekeys.get(i).getPublic());
-            }
-            KeyPair actualPrekey = generator.generateKeyPair();
-            Key prekey = actualPrekey.getPublic();
-            String ID = ChatSDK.currentUserID();
-            KeyBundle bundle = new KeyBundle(priv, prekey, prekeys);
-            ActualKeyBundle realBundle = new ActualKeyBundle(ID, pair, actualPrekey, realPrekeys);
-            database.child("users").child(ID).setValue(bundle);*/
-            //evey once in a while, upload new signed prekey and prekey signature
-            //save private of actual key bundle to phone somehow
-            //get public
 
         }catch(NoSuchAlgorithmException e){
             //handle exception
@@ -305,55 +283,20 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
 
         Log.i("IDK", "Before try!!");
         try{
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");//does this actally work, shuld be 25519
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
             Log.i("IDK", "IN try!!");
-           generator.initialize(new ECGenParameterSpec("secp256r1"));//256//nist p-256//x9.62 prime256v1
+            generator.initialize(new ECGenParameterSpec("secp256r1"));//256//nist p-256//x9.62 prime256v1
             String ID = "one";
             String ID2 = "two";
             User one = new User(ID);
             User two = new User(ID2);
             KeyPair pair1 = generator.generateKeyPair();
-            //Key priv1 = pair1.getPrivate();
-            //Key priv1 = pair1.getPrivate();
             ECPublicKey pub1 = (ECPublicKey) pair1.getPublic();
             ECPrivateKey priv1 = (ECPrivateKey) pair1.getPrivate();
-            ECParameterSpec ecspec = pub1.getParams();
-            int keySize = ecspec.getOrder().bitLength()/Byte.SIZE;
-            int offset = 0;
-            BigInteger x = new BigInteger(1, Arrays.copyOfRange(pub1.getEncoded(), offset, offset+keySize));
-            offset += keySize;
-            BigInteger y = new BigInteger(1, Arrays.copyOfRange(pub1.getEncoded(), offset, offset+keySize));
-            ECPoint point = new ECPoint(x,y);//so maybe dont need this or above
-            ECPoint pub1Point = pub1.getW();
-            //ECPoint priv1Point = priv1;
-            byte[] array = pub1Point.getAffineX().toByteArray();
-            byte[] array2 = pub1Point.getAffineY().toByteArray();//if you put 04 at beginnig then it meas uncompressed form
-            byte[] pub1Bytes = one.k.concat(array, array2);//do i need to add Bytes.byt("04") at beginning??
-            byte[] pub1BytesUncompressed = one.k.concat("04".getBytes(), pub1Bytes);
-            //change all other keys to this representation for getting to bytes and back
-            //and private version
-            //to turn back, use ECParameterSpec??
-            //ECParameterSpec ecSpec = parameters.getParameterSpec(ECParameterSpec.class);
-            //ECPublicKeySpec ecPublicKey = new ECPublicKeySpec(new ECPoint(new BigInteger(x), new BigInteger(y)), ecSpec);
-            //given byt[] of size 33, first byte is 04, next 32 is x, next 32 is y
-
-            //ecprivatekey to byte[] and back
-            byte[] array1Priv = priv1.getS().toByteArray();//i think this turns private key into byte array??
-            //and probbaly take byte array and cast it to ECPrivateKey??
-            Log.i("IDK","pub1Bytes length: " + pub1Bytes.length);
-            Log.i("IDK","pub1Bytes length with 04: " + pub1BytesUncompressed.length);
-            //byte[] privBytes = one.k.concat();
-            //byte[] pubBytes = point;
-            //Key pub1 = pair1.getPublic();
-            Log.i("IDK", "pair private length: " + array1Priv.length);//138 length//
-
-            Log.i("IDK", "pair public length: "+ pub1.getEncoded().length);//91 length//length still says this, still need to change to 32 byte for encoded
-
-            //Log.i("IDK", "pair public length string: "+ pub1.toString().getBytes().length);//402
-            //But users identity is 256 bit which is 32 byte??
-            //wrong encoding
-            //(ECPoint)priv1.getEncoded();
-            //ciphertetxt now 167? with regular message is 8 bytes
+            byte[] pub1Bytes = one.k.encodePub(pub1);
+            byte[] priv1Bytes = one.k.encodePriv(priv1);
+            Log.i("IDK","pub1Bytes length: " + pub1Bytes.length);//65//maybe git rid of first byte?? length-1 means last bte is at index 64 0-31, 32-64, 65
+            Log.i("IDK", "pair private length: " + priv1Bytes.length);//32
             List<KeyPair> realPrekeys1 = new ArrayList<KeyPair>();
             for(int i = 0; i < 10; i++){
                 realPrekeys1.add(generator.generateKeyPair());
@@ -363,8 +306,10 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
                 prekeys1.add(realPrekeys1.get(i).getPublic());
             }
             KeyPair actualPrekey1 = generator.generateKeyPair();
-            Log.i("IDK","actualPrekey1 public length: " + actualPrekey1.getPublic().getEncoded().length);
-            Log.i("IDK","actualPrekey1 private length: " + actualPrekey1.getPrivate().getEncoded().length);
+            byte[] pubBytes = one.k.encodePub(actualPrekey1.getPublic());
+            //byte[] pubBytesX = Arrays.copyOfRange(pubBytes,0, 32);
+            Log.i("IDK","actualPrekey1 public length: " + pubBytes.length);
+            Log.i("IDK","actualPrekey1 private length: " + one.k.encodePriv((ECPrivateKey) actualPrekey1.getPrivate()).length);
             Key prekey1 = actualPrekey1.getPublic();
             Log.i("IDK", "IN try!! Prekeys done!");
             /*//String ID = ChatSDK.currentUserID();
@@ -373,8 +318,7 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
 
             Log.i("IDK", "IN try!! Created users!");
             byte[] signedPrekey1 = new byte[32];
-            signedPrekey1 = one.signPreKey(pair1, prekey1.getEncoded());//null object reference in here to signPreKey
-            //pair1 is generated
+            signedPrekey1 = one.signPreKey(pair1, one.k.encodePub(prekey1));//change
 
             Log.i("IDK", "IN try!! Signed Prekeys!");
             Log.i("IDK", "IN try!! pub1 : " + pub1.toString());
@@ -425,26 +369,31 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             Log.i("IDK", "IN try!! bundle 1 identity priv: " + realBundle1.identity.getPrivate());
             Key secret = one.calculateSecretKey(bundle2.identity, bundle2.prekey, bundle2.signedPreKeyBytes, bundle2.pickPrekeyToSend());
             Log.i("IDK", "Secret key from alice: " + secret.toString());
-
-            byte[] AD = one.k.concat(bundle1.identity.getEncoded(), bundle2.identity.getEncoded());
+            byte[] identity1first32 = Arrays.copyOfRange(bundle1.identity.getEncoded(), 0, 32);
+            byte[] identity2first32 = Arrays.copyOfRange(bundle2.identity.getEncoded(), 0, 32);
+            byte[] AD = one.k.concat(identity1first32, identity2first32);//should be 64
             Log.i("IDK", "AD for alice is: " + AD);
-            int[] identifiers = new int[2];
+            Log.i("IDK", "AD for alice length is: " + AD.length);
+            int[] identifiers = new int[4];
             identifiers[0] = 1;
-            identifiers[1] = 1;//apprently use both
-            byte[] text = "Let's go".getBytes();
+            identifiers[1] = 1;
+            identifiers[2] = 0;
+            identifiers[3] = 0;
+            byte[] text = "Let's create a ses".getBytes();
             Log.i("IDK", "text length :" + text.length);
-            byte[] ciphertext = one.encryptInitialMessage(secret, text, AD);//supposedly length 64
+            byte[] ciphertext = one.encryptInitialMessage(secret, text, AD);//whole thing is 208 which is devisible by 16
             Log.i("IDK", "ciphertext of intitial message: "+ ciphertext);//signedPrekeys are length 71, so maybe try changing those to the same??
             byte[] initialMessageFromAlice = one.k.initialMessage(bundle1.identity, bundle2.identity, one.ephemeral.getPublic(), identifiers, ciphertext);
             Log.i("IDK", "inititial message from alice: " + initialMessageFromAlice);
             Log.i("IDK", "InitialMessageFromALice length: " + initialMessageFromAlice.length);//254??
             //cipertext is 64
             //each key should be 32??
-            byte[] initialMessage = new byte[initialMessageFromAlice.length-71];
-            byte[] decryptedInitialMessage = new byte[64];
+            //byte[] initialMessage = new byte[initialMessageFromAlice.length-71];
+            byte[] ciphertextFromAlice = new byte[ciphertext.length];
+            byte[] decryptedInitialMessage = new byte[65];
             byte[] IKAForB = new byte[32];
             byte[] EKAForB = new byte[32];
-            byte[] ids = new byte[8];//changed to 8
+            byte[] ids = new byte[16];//changed to 8
             int id;
             int id2;
             for(int i = 0; i < 32; i++){
@@ -458,10 +407,10 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             for(int i = 64; i < 72; i++){
                 ids[i-64] = initialMessageFromAlice[i];//I was assuming 1 int, but seems like two ints?
             }
-            int stuff = initialMessageFromAlice.length-32-32-8;
-            Log.i("IDK", "InitialMessageLength - 32-32-8: "+ stuff);
-            for(int i = 71; i < initialMessageFromAlice.length; i++){//changed to 105 not result.lenth
-                initialMessage[i-71] = initialMessageFromAlice[i];
+            //int stuff = initialMessageFromAlice.length-32-32-8;
+            //Log.i("IDK", "InitialMessageLength - 32-32-8: "+ stuff);
+            for(int i = 80; i < initialMessageFromAlice.length; i++){//changed to 105 not result.lenth
+                ciphertextFromAlice[i-80] = initialMessageFromAlice[i];//this is all the secret and AD and text
             }
             byte[] ids1 = new byte[4];
             byte[] ids2 = new byte[4];
@@ -474,35 +423,15 @@ public class MyLoginActivity extends BaseActivity implements View.OnClickListene
             id2 = ByteBuffer.wrap(ids2).getInt();
             Log.i("IDK", "id2: " + id2);
             id = ByteBuffer.wrap(ids1).getInt();
-            //Log.i("IDK", "id: " + id);
-            //SecretKey ika = new SecretKeySpec(IKAForB,  "ECDH");
-            //KeyGenParameterSpec spec = new KeyGenParameterSpec(IKAForB);
-            //KeyGenerator gen = KeyGenerator.getInstance(KeyGenParameterSpec(IKAForB));
-            //Log.i("IDK", "IKAForB length: " + IKAForB.length);//length is 32
-            //ECPublicKeySpec spec = new ECPublicKeySpec(IKAForB);
-            //KeyFactory keyFactory = KeyFactory.getInstance("DH");
-            //KeyFactorySpi keys = new KeyFactorySpi.ECDH();
-            /*SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance();
-            keys.generatePublic();*/
-            //EncodedKeySpec keySpec = new X509EncodedKeySpec(IKAForB);
-            //EncodedKeySpec keySpec = new X509EncodedKeySpec(IKAForB);
-            //PublicKey ikaKey = keyFactory.generatePublic(keySpec);
-            //THIS IS WHERE WE GET TO!!!!!
-
-            //Log.i("IDK", "ikaKey: " + ikaKey);
-            /*SecretKeyFactory factory = SecretKeyFactory.getInstance("EC");
-            SecretKey ika = factory.*/
-            //SecretKey eka = new SecretKeySpec(EKAForB,  "ECDH");
-            //EncodedKeySpec keySpeceka = new X509EncodedKeySpec(EKAForB);
-            //Log.i("IDK", "keySpecka: " + keySpeceka);
-            //Key ekaKey = keyFactory.generatePublic(keySpeceka);//this isntead of regular key fcatory and generate public//this is ppintless thingy
             Key secret2 = two.calculateSecretKey(bundle1.identity, bundle1.prekey, bundle1.getSignedPreKey().getEncoded(), bundle1.getSpecificPreKey(0));//do i actually need identity from message or just use
+            byte[] actualCiphertextWithAD = Arrays.copyOfRange(ciphertextFromAlice, 32, ciphertextFromAlice.length);
+            byte[] actualCiphertext = Arrays.copyOfRange(actualCiphertextWithAD, 0, ciphertextFromAlice.length-64);//how big is AD
             //ids are not working need to chnage this, for now hard code in 0
             //bundle identity??
             Log.i("IDK", "secret2: " + secret2);
             byte[] AD2 =  two.k.concat(bundle1.identity.getEncoded(), bundle2.identity.getEncoded());
             Log.i("IDK", "AD for Bob: " + AD2);
-            decryptedInitialMessage = two.decryptInitialMessage(secret2, initialMessage, AD2);
+            decryptedInitialMessage = two.decryptInitialMessage(secret2, ciphertextFromAlice, AD2);
             Log.i("IDK", "Initial Message in string: " + decryptedInitialMessage.toString());
 
             //delete any prekey used

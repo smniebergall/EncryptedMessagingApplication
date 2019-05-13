@@ -7,6 +7,7 @@ import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Collection;
 import java.util.Dictionary;
@@ -26,7 +27,8 @@ public class User {
     KeyAgreement k = new KeyAgreement();
     KeyPair ephemeral;
     List<State> states;
-   // private Key ;
+   //turn everything back to regular keys
+    //only use specifically ECPublicKeys when creating an encoding for them.
 
     public User(String userID){
         this.userID = userID;
@@ -74,8 +76,9 @@ public class User {
         k = new KeyAgreement();
         state.sendingKey = k.generate_DH();
         state.receivingKey = pub;
-        Key result= k.DH(state.sendingKey, state.receivingKey);
-        Pair<Pair<Key, Key>, Key> res = k.kdf_rk_he(state, secret, result);
+        byte[] result1 = k.DH(state.sendingKey, state.receivingKey);
+        //Key result = k.DH(state.sendingKey, state.receivingKey);
+        Pair<Pair<Key, Key>, Key> res = k.kdf_rk_he(state, secret, result1);
         //change KDF_RK second argument to regular key?
         state.rootKey = res.first.first;
         state.chainKeySending = res.first.second;
@@ -169,7 +172,7 @@ public class User {
         state.nextHeaderSending = nextHeaderSelf;
         state.headerReceiving = null;
         state.nextHeaderReceiving = sharedHeaderKeyOther;
-        state.skippedMessages = new Map<Pair<Key, Integer>, Key>() {
+        state.skippedMessages = new Map<Pair<Key, Integer>, Key>() {//change to actually us map with keys and integer
             @Override
             public int size() {
                 return 0;
@@ -278,6 +281,7 @@ public class User {
 
     public byte[] encryptInitialMessage(Key key, byte[] text, byte[] AD){
         Log.i("IDK", "In users encrypt initial");
+        Log.i("IDK", "AD length: " + AD.length);
         byte[] ciphertext = k.encrypt(key, text, AD);
         Log.i("IDK", "users encrypt intial message, ciphertext "+ ciphertext);
         return ciphertext;
